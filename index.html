@@ -223,48 +223,69 @@
   const container = document.getElementById('beatsContainer');
 
   const beatsRef = ref(db, 'beats');
+  let renderedIds = new Set();
+
   onValue(beatsRef, (snapshot) => {
     const data = snapshot.val();
-    container.innerHTML = '';
     if(!data){
       container.innerHTML = '<div class="empty">No beats available right now. Check back soon!</div>';
+      renderedIds = new Set();
       return;
     }
     const beats = Object.entries(data).sort((a,b)=> (b[1].createdAt||0)-(a[1].createdAt||0));
-    beats.forEach(([id, beat])=>{
-      const card = document.createElement('div');
-      card.className = 'beat-card';
-      card.innerHTML = `
-        <div class="beat-title">${beat.name}</div>
-        <div class="beat-meta">
-          <span>🎧 ${beat.plays||0} plays</span>
-          <span>${beat.genre||''}</span>
-        </div>
-        <audio controls preload="none" src="beats/${beat.file}"></audio>
-        <div class="beat-footer">
-          <div class="price">₹${beat.price}</div>
-          <button class="buy-btn" onclick='openModal("${id}", ${JSON.stringify(beat.name)}, ${beat.price})'>Buy Now</button>
-        </div>
-      `;
-      const audioEl = card.querySelector('audio');
-      let counted = false;
-      let playTimer = null;
-      audioEl.addEventListener('play', ()=>{
-        if(!counted){
-          playTimer = setTimeout(()=>{
-            if(!counted){
-              counted = true;
-              const plaRef = ref(db, 'beats/'+id+'/plays');
-              runTransaction(plaRef, (val)=> (val||0)+1);
-            }
-          }, 10000);
+    const currentIds = new Set(beats.map(b=>b[0]));
+
+    // If the set of beats changed (added/removed), do a full rebuild
+    const idsChanged = currentIds.size !== renderedIds.size || [...currentIds].some(id=>!renderedIds.has(id));
+
+    if(idsChanged){
+      container.innerHTML = '';
+      beats.forEach(([id, beat])=>{
+        const card = document.createElement('div');
+        card.className = 'beat-card';
+        card.dataset.beatId = id;
+        card.innerHTML = `
+          <div class="beat-title">${beat.name}</div>
+          <div class="beat-meta">
+            <span class="play-count">🎧 ${beat.plays||0} plays</span>
+            <span>${beat.genre||''}</span>
+          </div>
+          <audio controls preload="none" src="beats/${beat.file}"></audio>
+          <div class="beat-footer">
+            <div class="price">₹${beat.price}</div>
+            <button class="buy-btn" onclick='openModal("${id}", ${JSON.stringify(beat.name)}, ${beat.price})'>Buy Now</button>
+          </div>
+        `;
+        const audioEl = card.querySelector('audio');
+        let counted = false;
+        let playTimer = null;
+        audioEl.addEventListener('play', ()=>{
+          if(!counted){
+            playTimer = setTimeout(()=>{
+              if(!counted){
+                counted = true;
+                const plaRef = ref(db, 'beats/'+id+'/plays');
+                runTransaction(plaRef, (val)=> (val||0)+1);
+              }
+            }, 10000);
+          }
+        });
+        audioEl.addEventListener('pause', ()=>{
+          if(playTimer){ clearTimeout(playTimer); playTimer=null; }
+        });
+        container.appendChild(card);
+      });
+      renderedIds = currentIds;
+    } else {
+      // Only update play counts in place, don't touch audio elements
+      beats.forEach(([id, beat])=>{
+        const card = container.querySelector(`[data-beat-id="${id}"]`);
+        if(card){
+          const countEl = card.querySelector('.play-count');
+          if(countEl) countEl.textContent = `🎧 ${beat.plays||0} plays`;
         }
       });
-      audioEl.addEventListener('pause', ()=>{
-        if(playTimer){ clearTimeout(playTimer); playTimer=null; }
-      });
-      container.appendChild(card);
-    });
+    }
   });
 
   window.openModal = function(id, name, price){
