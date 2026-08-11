@@ -248,12 +248,20 @@
       `;
       const audioEl = card.querySelector('audio');
       let counted = false;
+      let playTimer = null;
       audioEl.addEventListener('play', ()=>{
         if(!counted){
-          counted = true;
-          const plaRef = ref(db, 'beats/'+id+'/plays');
-          runTransaction(plaRef, (val)=> (val||0)+1);
+          playTimer = setTimeout(()=>{
+            if(!counted){
+              counted = true;
+              const plaRef = ref(db, 'beats/'+id+'/plays');
+              runTransaction(plaRef, (val)=> (val||0)+1);
+            }
+          }, 10000);
         }
+      });
+      audioEl.addEventListener('pause', ()=>{
+        if(playTimer){ clearTimeout(playTimer); playTimer=null; }
       });
       container.appendChild(card);
     });
