@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin - Shri Beatz</title>
+<style>
+  :root{
+    --bg:#0a0a0a;--card:#161616;--orange:#ff8c1a;--text:#f2f2f2;--muted:#9a9a9a;--border:#2a2a2a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Roboto,Arial,sans-serif;padding-bottom:40px;}
+  .container{max-width:640px;margin:0 auto;padding:16px;}
+  h1{color:var(--orange);font-size:20px;margin-bottom:20px;}
+  h2{font-size:15px;margin:24px 0 12px;color:var(--orange);}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:16px;}
+  .field{margin-bottom:14px;}
+  .field label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px;}
+  .field input{width:100%;padding:12px;border-radius:10px;border:1px solid var(--border);background:#0f0f0f;color:var(--text);font-size:14px;}
+  button{background:var(--orange);color:#000;border:none;padding:12px 20px;border-radius:30px;font-weight:700;font-size:14px;cursor:pointer;width:100%;}
+  button.secondary{background:#222;color:var(--text);margin-top:8px;}
+  .order-item{border-bottom:1px solid var(--border);padding:12px 0;font-size:13px;}
+  .order-item:last-child{border-bottom:none;}
+  .order-item .row{display:flex;justify-content:space-between;margin-bottom:4px;}
+  .order-item .muted{color:var(--muted);font-size:12px;}
+  .beat-row{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding:10px 0;font-size:13px;}
+  .beat-row button{width:auto;padding:6px 14px;font-size:12px;margin-left:8px;}
+  .del-btn{background:#3a1a1a !important;color:#ff6b6b !important;}
+  #loginBox{max-width:340px;margin:80px auto;}
+  .msg{font-size:12px;color:var(--muted);margin-top:8px;text-align:center;}
+  .top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+  .top-bar button{width:auto;padding:8px 16px;font-size:12px;}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div id="loginBox" class="card">
+    <h1>Shri Beatz Admin</h1>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="loginEmail" placeholder="admin email">
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="loginPassword" placeholder="password">
+    </div>
+    <button onclick="doLogin()">Login</button>
+    <div class="msg" id="loginMsg"></div>
+  </div>
+
+  <div id="adminPanel" style="display:none">
+    <div class="top-bar">
+      <h1 style="margin:0">Admin Panel</h1>
+      <button class="secondary" onclick="doLogout()">Logout</button>
+    </div>
+
+    <h2>➕ Add New Beat</h2>
+    <div class="card">
+      <div class="field">
+        <label>Beat Name (as on YouTube)</label>
+        <input type="text" id="beatName" placeholder='e.g. "ACHANAK" - Indian Gangsta Type Beat'>
+      </div>
+      <div class="field">
+        <label>Genre / Style</label>
+        <input type="text" id="beatGenre" placeholder="Oldschool / 90s Type Beat">
+      </div>
+      <div class="field">
+        <label>Price (₹)</label>
+        <input type="number" id="beatPrice" placeholder="50">
+      </div>
+      <div class="field">
+        <label>Preview File Name (mp3, already uploaded to /beats folder on GitHub)</label>
+        <input type="text" id="beatFile" placeholder="achanak.mp3">
+      </div>
+      <button onclick="addBeat()">Add Beat</button>
+      <div class="msg" id="addMsg"></div>
+    </div>
+
+    <h2>🎵 Manage Beats</h2>
+    <div class="card" id="beatsList">
+      <div class="msg">Loading...</div>
+    </div>
+
+    <h2>📦 Orders</h2>
+    <div class="card" id="ordersList">
+      <div class="msg">Loading...</div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getDatabase, ref, onValue, push, set, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAZOYSy3s3HwkjhnwQzWPMzabky9LrjX8c",
+    authDomain: "shri-beatz-store.firebaseapp.com",
+    databaseURL: "https://shri-beatz-store-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "shri-beatz-store",
+    storageBucket: "shri-beatz-store.firebasestorage.app",
+    messagingSenderId: "1016496280094",
+    appId: "1:1016496280094:web:c4398a985f875d0dc7940f"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getDatabase(app);
+
+  window.doLogin = function(){
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    document.getElementById('loginMsg').textContent = 'Logging in...';
+    signInWithEmailAndPassword(auth, email, password)
+      .catch(err=>{
+        document.getElementById('loginMsg').textContent = 'Login failed: ' + err.message;
+      });
+  }
+
+  window.doLogout = function(){
+    signOut(auth);
+  }
+
+  onAuthStateChanged(auth, (user)=>{
+    if(user){
+      document.getElementById('loginBox').style.display='none';
+      document.getElementById('adminPanel').style.display='block';
+      loadBeats();
+      loadOrders();
+    } else {
+      document.getElementById('loginBox').style.display='block';
+      document.getElementById('adminPanel').style.display='none';
+    }
+  });
+
+  window.addBeat = function(){
+    const name = document.getElementById('beatName').value.trim();
+    const genre = document.getElementById('beatGenre').value.trim();
+    const price = parseInt(document.getElementById('beatPrice').value);
+    const file = document.getElementById('beatFile').value.trim();
+    if(!name || !price || !file){
+      document.getElementById('addMsg').textContent = 'Please fill Name, Price and File Name.';
+      return;
+    }
+    const beatRef = push(ref(db, 'beats'));
+    set(beatRef, {
+      name, genre, price, file,
+      plays: 0,
+      createdAt: Date.now()
+    }).then(()=>{
+      document.getElementById('addMsg').textContent = '✅ Beat added!';
+      document.getElementById('beatName').value='';
+      document.getElementById('beatGenre').value='';
+      document.getElementById('beatPrice').value='';
+      document.getElementById('beatFile').value='';
+    });
+  }
+
+  function loadBeats(){
+    onValue(ref(db, 'beats'), (snapshot)=>{
+      const data = snapshot.val();
+      const list = document.getElementById('beatsList');
+      list.innerHTML='';
+      if(!data){ list.innerHTML = '<div class="msg">No beats yet.</div>'; return; }
+      Object.entries(data).forEach(([id, beat])=>{
+        const row = document.createElement('div');
+        row.className='beat-row';
+        row.innerHTML = `<span>${beat.name} — ₹${beat.price} — 🎧${beat.plays||0}</span>
+          <span><button class="del-btn" onclick="deleteBeat('${id}')">Delete</button></span>`;
+        list.appendChild(row);
+      });
+    });
+  }
+
+  window.deleteBeat = function(id){
+    if(confirm('Delete this beat?')){
+      remove(ref(db, 'beats/'+id));
+    }
+  }
+
+  function loadOrders(){
+    onValue(ref(db, 'orders'), (snapshot)=>{
+      const data = snapshot.val();
+      const list = document.getElementById('ordersList');
+      list.innerHTML='';
+      if(!data){ list.innerHTML = '<div class="msg">No orders yet.</div>'; return; }
+      const orders = Object.entries(data).sort((a,b)=>(b[1].createdAt||0)-(a[1].createdAt||0));
+      orders.forEach(([id, o])=>{
+        const div = document.createElement('div');
+        div.className='order-item';
+        const date = new Date(o.createdAt).toLocaleString('en-IN');
+        div.innerHTML = `
+          <div class="row"><b>${o.beatName}</b><span>₹${o.price}</span></div>
+          <div class="muted">${o.buyerName} | ${o.buyerPhone} | ${o.buyerEmail||'-'}</div>
+          <div class="muted">Payment ID: ${o.paymentId} | ${date}</div>
+        `;
+        list.appendChild(div);
+      });
+    });
+  }
+</script>
+</body>
+</html>
