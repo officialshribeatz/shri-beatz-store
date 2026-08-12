@@ -12,16 +12,31 @@ exports.handler = async function(event) {
       return { statusCode: 400, body: JSON.stringify({ message: 'Missing path or content' }) };
     }
 
-    const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/${path}`, {
+    const apiUrl = `https://api.github.com/repos/${GITHUB_REPO}/contents/${path}`;
+
+    // Check if file already exists to get its sha (required for updates)
+    let sha = undefined;
+    const existingRes = await fetch(apiUrl, {
+      headers: { 'Authorization': `token ${GITHUB_TOKEN}` }
+    });
+    if (existingRes.ok) {
+      const existingData = await existingRes.json();
+      sha = existingData.sha;
+    }
+
+    const body = {
+      message: `Upload ${path}`,
+      content: content
+    };
+    if (sha) body.sha = sha;
+
+    const res = await fetch(apiUrl, {
       method: 'PUT',
       headers: {
         'Authorization': `token ${GITHUB_TOKEN}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        message: `Upload ${path}`,
-        content: content
-      })
+      body: JSON.stringify(body)
     });
 
     const data = await res.json();
