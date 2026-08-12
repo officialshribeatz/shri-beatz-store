@@ -42,16 +42,25 @@
     display:flex;
     justify-content:center;
     align-items:center;
-    gap:10px;
+    gap:8px;
     flex-wrap:wrap;
-    font-size:10.5px;
-    color:var(--muted);
-    padding:10px 16px;
-    background:linear-gradient(90deg, transparent, rgba(255,140,26,0.06), transparent);
+    padding:12px 16px;
+    background:linear-gradient(180deg, #131313, #0d0d0d);
     border-bottom:1px solid var(--border);
+  }
+  .trust-chip{
+    display:flex;
+    align-items:center;
+    gap:5px;
+    font-size:10.5px;
+    font-weight:600;
+    color:#e8e8e8;
+    background:rgba(255,140,26,0.08);
+    border:1px solid rgba(255,140,26,0.25);
+    padding:5px 11px;
+    border-radius:20px;
     letter-spacing:0.2px;
   }
-  .trust-strip .dot{color:#3a3a3a;}
   .exclusive-badge{
     position:absolute;
     top:14px;right:14px;
@@ -284,6 +293,45 @@
     font-size:11px;
     padding:20px;
   }
+  .contact-section{
+    max-width:640px;
+    margin:10px auto 0;
+    padding:28px 20px;
+    text-align:center;
+    background:linear-gradient(180deg, #141414, #0d0d0d);
+    border-top:1px solid var(--border);
+    border-bottom:1px solid var(--border);
+  }
+  .contact-title{
+    font-size:17px;
+    font-weight:800;
+    margin-bottom:6px;
+  }
+  .contact-sub{
+    font-size:12px;
+    color:var(--muted);
+    margin-bottom:18px;
+  }
+  .contact-links{
+    display:flex;
+    justify-content:center;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  .contact-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:10px 20px;
+    border-radius:30px;
+    background:#1c1c1c;
+    border:1px solid var(--border);
+    color:var(--text);
+    text-decoration:none;
+    font-size:13px;
+    font-weight:600;
+  }
+  .contact-btn:active{transform:scale(0.97);}
 </style>
 </head>
 <body>
@@ -297,15 +345,23 @@
 </header>
 
 <div class="trust-strip">
-  <span>🔒 Secure Payment</span>
-  <span class="dot">•</span>
-  <span>⚡ Instant Confirmation</span>
-  <span class="dot">•</span>
-  <span>🎯 100% Exclusive Rights</span>
+  <span class="trust-chip">🔒 Secure Payment</span>
+  <span class="trust-chip">⚡ Instant Confirmation</span>
+  <span class="trust-chip">🎁 Free Delivery</span>
+  <span class="trust-chip">🎧 Studio Quality</span>
 </div>
 
 <div class="container" id="beatsContainer">
   <div class="empty">Loading beats...</div>
+</div>
+
+<div class="contact-section">
+  <div class="contact-title">Need a Custom Beat?</div>
+  <div class="contact-sub">DM us on Instagram or WhatsApp for custom production</div>
+  <div class="contact-links">
+    <a href="https://instagram.com/shribeatz.wave" target="_blank" class="contact-btn">📷 Instagram</a>
+    <a href="https://wa.me/919137471587" target="_blank" class="contact-btn">💬 WhatsApp</a>
+  </div>
 </div>
 
 <footer>© Shri Beatz. All beats sold are exclusive.</footer>
