@@ -83,16 +83,18 @@
   .stat-card .num{font-size:26px;font-weight:800;color:var(--orange);letter-spacing:0.5px;}
   .stat-card .label{font-size:10.5px;color:var(--muted);margin-top:6px;text-transform:uppercase;letter-spacing:0.8px;font-weight:600;}
 
-  .beat-row-main{padding:14px 0;border-bottom:1px solid var(--border);}
+  .beat-row-main{padding:16px 0;border-bottom:1px solid var(--border);}
   .beat-row-main:last-child{border-bottom:none;}
-  .beat-row-top{display:flex;justify-content:space-between;align-items:center;font-size:13.5px;margin-bottom:10px;}
-  .beat-row-top span:first-child{font-weight:600;}
-  .beat-row-actions{display:flex;gap:8px;align-items:center;}
-  .beat-row-actions input{
-    width:80px;padding:9px 10px;border-radius:8px;border:1px solid var(--border);
+  .beat-row-head{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);margin-bottom:10px;}
+  .beat-edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+  .beat-edit-grid .full{grid-column:1 / -1;}
+  .beat-edit-grid label{font-size:10px;color:var(--muted);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;}
+  .beat-edit-grid input{
+    width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--border);
     background:#0d0d0d;color:var(--text);font-size:13px;
   }
-  .beat-row-actions button{width:auto;padding:9px 16px;font-size:11.5px;box-shadow:none;}
+  .beat-row-actions{display:flex;gap:8px;}
+  .beat-row-actions button{width:auto;padding:9px 16px;font-size:11.5px;box-shadow:none;flex:1;}
   .edit-btn{background:#16283a !important;color:#5bc0ff !important;border:1px solid #1f3a52;}
   .del-btn{background:#2e1414 !important;color:var(--red) !important;border:1px solid #442020;}
 
@@ -158,6 +160,10 @@
         <input type="text" id="beatGenre" placeholder="Oldschool / 90s Type Beat">
       </div>
       <div class="field">
+        <label>Key (optional)</label>
+        <input type="text" id="beatKey" placeholder="e.g. C Minor">
+      </div>
+      <div class="field">
         <label>Price (₹)</label>
         <input type="number" id="beatPrice" placeholder="50">
       </div>
@@ -184,7 +190,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  import { getDatabase, ref, onValue, push, set, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+  import { getDatabase, ref, onValue, push, set, remove, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAZOYSy3s3HwkjhnwQzWPMzabky9LrjX8c",
@@ -229,6 +235,7 @@
   window.addBeat = function(){
     const name = document.getElementById('beatName').value.trim();
     const genre = document.getElementById('beatGenre').value.trim();
+    const key = document.getElementById('beatKey').value.trim();
     const price = parseInt(document.getElementById('beatPrice').value);
     const file = document.getElementById('beatFile').value.trim();
     if(!name || !price || !file){
@@ -237,13 +244,14 @@
     }
     const beatRef = push(ref(db, 'beats'));
     set(beatRef, {
-      name, genre, price, file,
+      name, genre, key, price, file,
       plays: 0,
       createdAt: Date.now()
     }).then(()=>{
       document.getElementById('addMsg').textContent = '✅ Beat added!';
       document.getElementById('beatName').value='';
       document.getElementById('beatGenre').value='';
+      document.getElementById('beatKey').value='';
       document.getElementById('beatPrice').value='';
       document.getElementById('beatFile').value='';
     });
@@ -266,14 +274,30 @@
         const row = document.createElement('div');
         row.className='beat-row-main';
         row.innerHTML = `
-          <div class="beat-row-top">
-            <span>${beat.name}</span>
-            <span class="muted">🎧${beat.plays||0}</span>
+          <div class="beat-row-head">
+            <span>🎧 ${beat.plays||0} plays</span>
+            <span>ID: ${id.slice(-5)}</span>
+          </div>
+          <div class="beat-edit-grid">
+            <div class="full">
+              <label>Beat Name</label>
+              <input type="text" id="name-${id}" value="${beat.name||''}">
+            </div>
+            <div>
+              <label>Genre</label>
+              <input type="text" id="genre-${id}" value="${beat.genre||''}">
+            </div>
+            <div>
+              <label>Key</label>
+              <input type="text" id="key-${id}" value="${beat.key||''}">
+            </div>
+            <div>
+              <label>Price (₹)</label>
+              <input type="number" id="price-${id}" value="${beat.price||''}">
+            </div>
           </div>
           <div class="beat-row-actions">
-            <span class="muted">₹</span>
-            <input type="number" id="price-${id}" value="${beat.price}">
-            <button class="edit-btn" onclick="updatePrice('${id}')">Update</button>
+            <button class="edit-btn" onclick="updateBeat('${id}')">Save Changes</button>
             <button class="del-btn" onclick="deleteBeat('${id}')">Delete</button>
           </div>
         `;
@@ -284,11 +308,22 @@
     });
   }
 
-  window.updatePrice = function(id){
-    const newPrice = parseInt(document.getElementById('price-'+id).value);
-    if(!newPrice || newPrice <= 0){ alert('Enter a valid price'); return; }
-    set(ref(db, 'beats/'+id+'/price'), newPrice).then(()=>{
-      alert('Price updated!');
+  window.updateBeat = function(id){
+    const name = document.getElementById('name-'+id).value.trim();
+    const genre = document.getElementById('genre-'+id).value.trim();
+    const key = document.getElementById('key-'+id).value.trim();
+    const priceVal = document.getElementById('price-'+id).value;
+    const updates = {};
+    if(name) updates.name = name;
+    if(genre) updates.genre = genre;
+    if(key) updates.key = key;
+    if(priceVal && parseInt(priceVal) > 0) updates.price = parseInt(priceVal);
+    if(Object.keys(updates).length === 0){
+      alert('Nothing to update.');
+      return;
+    }
+    update(ref(db, 'beats/'+id), updates).then(()=>{
+      alert('✅ Updated!');
     });
   }
 

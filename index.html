@@ -255,6 +255,7 @@
           <div class="beat-meta">
             <span class="play-count">🎧 ${beat.plays||0} plays</span>
             <span>${beat.genre||''}</span>
+            ${beat.key ? `<span>Key: ${beat.key}</span>` : ''}
           </div>
           <audio controls preload="none" src="beats/${beat.file}"></audio>
           <div class="beat-footer">
