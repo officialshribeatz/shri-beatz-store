@@ -91,39 +91,62 @@
     display:flex;
     align-items:center;
     gap:14px;
-    background:#0e0e0e;
+    background:linear-gradient(135deg, #101010, #0a0a0a);
     border:1px solid var(--border);
-    border-radius:14px;
-    padding:10px 14px;
+    border-radius:16px;
+    padding:12px 16px;
     margin-bottom:16px;
+    position:relative;
+    overflow:hidden;
+  }
+  .player::before{
+    content:'';
+    position:absolute;
+    top:0;left:0;right:0;height:1px;
+    background:linear-gradient(90deg, transparent, rgba(255,140,26,0.4), transparent);
   }
   .play-btn{
-    width:42px;height:42px;border-radius:50%;flex-shrink:0;
-    background:linear-gradient(135deg, var(--orange-dim), var(--orange));
+    -webkit-appearance:none;
+    appearance:none;
+    width:46px;height:46px;border-radius:50%;flex-shrink:0;
+    background:linear-gradient(135deg, #ffb44d, #ff8c1a) !important;
     border:none;cursor:pointer;
     display:flex;align-items:center;justify-content:center;
-    box-shadow:0 3px 10px rgba(255,140,26,0.3);
+    box-shadow:0 4px 14px rgba(255,140,26,0.45), inset 0 1px 1px rgba(255,255,255,0.3);
+    position:relative;
+    transition:transform 0.15s ease;
   }
-  .play-btn svg{width:16px;height:16px;}
-  .player-track{flex:1;display:flex;flex-direction:column;gap:6px;}
+  .play-btn:active{transform:scale(0.92);}
+  .play-btn.is-playing{
+    animation:pulseGlow 1.6s ease-in-out infinite;
+  }
+  @keyframes pulseGlow{
+    0%,100%{box-shadow:0 4px 14px rgba(255,140,26,0.45), 0 0 0 0 rgba(255,140,26,0.4);}
+    50%{box-shadow:0 4px 14px rgba(255,140,26,0.6), 0 0 0 8px rgba(255,140,26,0);}
+  }
+  .play-btn svg{width:17px;height:17px;position:relative;z-index:1;}
+  .play-btn svg path{fill:#1a0f00;}
+  .player-track{flex:1;display:flex;flex-direction:column;gap:7px;}
   .progress-wrap{
     position:relative;
-    height:5px;
-    background:#242424;
+    height:6px;
+    background:#1c1c1c;
     border-radius:10px;
     cursor:pointer;
+    box-shadow:inset 0 1px 2px rgba(0,0,0,0.5);
   }
   .progress-fill{
     position:absolute;left:0;top:0;height:100%;
-    background:linear-gradient(90deg, var(--orange-dim), var(--orange));
+    background:linear-gradient(90deg, #ffb44d, #ff8c1a);
     border-radius:10px;
     width:0%;
-    transition:width 0.1s linear;
+    box-shadow:0 0 8px rgba(255,140,26,0.6);
   }
   .progress-handle{
-    position:absolute;top:50%;width:11px;height:11px;border-radius:50%;
+    position:absolute;top:50%;width:13px;height:13px;border-radius:50%;
     background:#fff;transform:translate(-50%,-50%);
-    left:0%;box-shadow:0 1px 4px rgba(0,0,0,0.4);
+    left:0%;box-shadow:0 0 6px rgba(255,255,255,0.7), 0 2px 4px rgba(0,0,0,0.4);
+    border:2px solid var(--orange);
   }
   .player-time{
     display:flex;justify-content:space-between;
@@ -373,10 +396,12 @@
         audioEl.addEventListener('play', ()=>{
           iconPlay.style.display='none';
           iconPause.style.display='block';
+          playBtn.classList.add('is-playing');
         });
         audioEl.addEventListener('pause', ()=>{
           iconPlay.style.display='block';
           iconPause.style.display='none';
+          playBtn.classList.remove('is-playing');
         });
         audioEl.addEventListener('loadedmetadata', ()=>{
           timeTotal.textContent = formatTime(audioEl.duration);
@@ -390,6 +415,7 @@
         audioEl.addEventListener('ended', ()=>{
           iconPlay.style.display='block';
           iconPause.style.display='none';
+          playBtn.classList.remove('is-playing');
         });
         progressWrap.addEventListener('click', (e)=>{
           const rect = progressWrap.getBoundingClientRect();
