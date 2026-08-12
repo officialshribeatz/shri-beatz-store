@@ -184,6 +184,9 @@
     </div>
 
     <h2>🎵 Manage Beats</h2>
+    <div class="field">
+      <input type="text" id="adminSearch" placeholder="🔍 Search beats...">
+    </div>
     <div class="card" id="beatsList">
       <div class="msg">Loading...</div>
     </div>
@@ -328,6 +331,7 @@
         totalPlays += (beat.plays||0);
         const row = document.createElement('div');
         row.className='beat-row-main';
+        row.dataset.search = `${beat.name||''} ${beat.genre||''} ${beat.key||''}`.toLowerCase();
         row.innerHTML = `
           <div class="beat-row-head">
             <span>🎧 ${beat.plays||0} plays</span>
@@ -364,8 +368,17 @@
       });
       document.getElementById('statBeats').textContent = Object.keys(data).length;
       document.getElementById('statPlays').textContent = totalPlays;
+      applyAdminSearch();
     });
   }
+
+  function applyAdminSearch(){
+    const term = document.getElementById('adminSearch').value.trim().toLowerCase();
+    document.querySelectorAll('#beatsList .beat-row-main').forEach(row=>{
+      row.style.display = (!term || row.dataset.search.includes(term)) ? '' : 'none';
+    });
+  }
+  document.getElementById('adminSearch').addEventListener('input', applyAdminSearch);
 
   window.updateBeat = function(id){
     const name = document.getElementById('name-'+id).value.trim();
