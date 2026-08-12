@@ -385,7 +385,7 @@
   </div>
 </div>
 
-<footer>© Shri Beatz. All beats sold are exclusive.</footer>
+<footer>© Shri Beatz. All beats sold are exclusive.<br><a href="license.html" style="color:var(--orange);text-decoration:none;">View License Terms</a></footer>
 
 <!-- Buy Modal -->
 <div class="overlay" id="buyOverlay">
@@ -656,6 +656,12 @@
           status: "paid",
           createdAt: Date.now()
         });
+        // Send instant push notification to admin phone via ntfy.sh
+        fetch('https://ntfy.sh/shribeatz-orders-sk2001', {
+          method: 'POST',
+          headers: { 'Title': 'New Order Received!', 'Priority': 'urgent', 'Tags': 'moneybag' },
+          body: `${currentBeat.name} - ₹${currentBeat.price}\nBuyer: ${name} | ${phone}`
+        }).catch(()=>{});
         document.getElementById('formStep').style.display='none';
         document.getElementById('successStep').style.display='block';
       },
