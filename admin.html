@@ -427,7 +427,7 @@
         const date = new Date(o.createdAt).toLocaleString('en-IN');
         div.innerHTML = `
           <div class="row"><b>${o.beatName}</b><span>₹${o.price}</span></div>
-          <div class="muted">${o.buyerName} | ${o.buyerPhone} | ${o.buyerEmail||'-'}</div>
+          <div class="muted">${o.buyerName}${o.buyerStageName ? ' (aka '+o.buyerStageName+')' : ''} | ${o.buyerPhone} | ${o.buyerEmail||'-'}</div>
           <div class="muted">Payment ID: ${o.paymentId} | ${date}</div>
         `;
         list.appendChild(div);
