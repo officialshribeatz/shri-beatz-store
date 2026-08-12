@@ -240,6 +240,19 @@
     padding:60px 20px;
     font-size:14px;
   }
+  .search-wrap{margin-bottom:18px;}
+  .search-wrap input{
+    width:100%;
+    padding:13px 16px;
+    border-radius:14px;
+    border:1px solid var(--border);
+    background:#131313;
+    color:var(--text);
+    font-size:13.5px;
+    box-shadow:inset 0 1px 3px rgba(0,0,0,0.3);
+  }
+  .search-wrap input::placeholder{color:#6a6a6a;}
+  .search-wrap input:focus{outline:none;border-color:var(--orange);}
   /* Modal */
   .overlay{
     display:none;
@@ -355,7 +368,12 @@
 </div>
 
 <div class="container" id="beatsContainer">
-  <div class="empty">Loading beats...</div>
+  <div class="search-wrap">
+    <input type="text" id="searchInput" placeholder="🔍 Search beats by name, genre, key...">
+  </div>
+  <div id="beatsList">
+    <div class="empty">Loading beats...</div>
+  </div>
 </div>
 
 <div class="contact-section">
@@ -425,7 +443,7 @@
   const RAZORPAY_KEY_ID = "rzp_live_TOY0k1PnoWeL26";
 
   let currentBeat = null;
-  const container = document.getElementById('beatsContainer');
+  const container = document.getElementById('beatsList');
 
   const beatsRef = ref(db, 'beats');
   let renderedIds = new Set();
@@ -449,6 +467,7 @@
         const card = document.createElement('div');
         card.className = 'beat-card';
         card.dataset.beatId = id;
+        card.dataset.search = `${beat.name||''} ${beat.genre||''} ${beat.key||''}`.toLowerCase();
         card.innerHTML = `
           <div class="exclusive-badge">Exclusive</div>
           <div class="beat-head">
@@ -558,6 +577,7 @@
         container.appendChild(card);
       });
       renderedIds = currentIds;
+      applySearchFilter();
     } else {
       // Only update play counts in place, don't touch audio elements
       beats.forEach(([id, beat])=>{
@@ -569,6 +589,29 @@
       });
     }
   });
+
+  function applySearchFilter(){
+    const term = document.getElementById('searchInput').value.trim().toLowerCase();
+    const cards = container.querySelectorAll('.beat-card');
+    let anyVisible = false;
+    cards.forEach(card=>{
+      const match = !term || card.dataset.search.includes(term);
+      card.style.display = match ? '' : 'none';
+      if(match) anyVisible = true;
+    });
+    let noResultsEl = container.querySelector('.no-results');
+    if(!anyVisible && cards.length > 0){
+      if(!noResultsEl){
+        noResultsEl = document.createElement('div');
+        noResultsEl.className = 'empty no-results';
+        noResultsEl.textContent = 'No beats match your search.';
+        container.appendChild(noResultsEl);
+      }
+    } else if(noResultsEl){
+      noResultsEl.remove();
+    }
+  }
+  document.getElementById('searchInput').addEventListener('input', applySearchFilter);
 
   window.openModal = function(id, name, price){
     currentBeat = {id, name, price};
