@@ -17,7 +17,10 @@
   }
   *{box-sizing:border-box;margin:0;padding:0;}
   body{
-    background:var(--bg);
+    background:#0a0a0a;
+    background-image:
+      radial-gradient(ellipse 600px 400px at 20% -10%, rgba(255,140,26,0.08), transparent),
+      radial-gradient(ellipse 500px 400px at 100% 30%, rgba(255,140,26,0.05), transparent);
     color:var(--text);
     font-family:'Segoe UI',Roboto,Arial,sans-serif;
     padding-bottom:60px;
@@ -35,6 +38,42 @@
     z-index:10;
   }
   header img{width:44px;height:44px;border-radius:8px;}
+  .trust-strip{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+    font-size:10.5px;
+    color:var(--muted);
+    padding:10px 16px;
+    background:linear-gradient(90deg, transparent, rgba(255,140,26,0.06), transparent);
+    border-bottom:1px solid var(--border);
+    letter-spacing:0.2px;
+  }
+  .trust-strip .dot{color:#3a3a3a;}
+  .exclusive-badge{
+    position:absolute;
+    top:14px;right:14px;
+    background:linear-gradient(135deg, #ff8c1a, #ff6b1a);
+    color:#000;
+    font-size:9px;
+    font-weight:800;
+    letter-spacing:0.6px;
+    padding:4px 9px;
+    border-radius:20px;
+    box-shadow:0 2px 8px rgba(255,140,26,0.4);
+    text-transform:uppercase;
+  }
+  .urgency-line{
+    font-size:11px;
+    color:#ff9d4d;
+    display:flex;
+    align-items:center;
+    gap:5px;
+    margin-top:8px;
+    font-weight:600;
+  }
   header h1{font-size:20px;color:var(--orange);letter-spacing:0.5px;}
   header p{font-size:11px;color:var(--muted);}
   .container{max-width:640px;margin:0 auto;padding:16px;}
@@ -45,6 +84,7 @@
     padding:20px;
     margin-bottom:18px;
     box-shadow:0 8px 24px rgba(0,0,0,0.4);
+    position:relative;
   }
   .beat-head{
     display:flex;
@@ -169,12 +209,17 @@
     background:linear-gradient(135deg, #ffa63d, #ff8c1a);
     color:#000;
     border:none;
-    padding:10px 24px;
+    padding:11px 26px;
     border-radius:30px;
     font-weight:800;
     font-size:14px;
     cursor:pointer;
     box-shadow:0 3px 10px rgba(255,140,26,0.3);
+    animation:btnPulse 2.4s ease-in-out infinite;
+  }
+  @keyframes btnPulse{
+    0%,100%{box-shadow:0 3px 10px rgba(255,140,26,0.3);}
+    50%{box-shadow:0 3px 16px rgba(255,140,26,0.55);}
   }
   .buy-btn:active{transform:scale(0.97);}
   .empty{
@@ -250,6 +295,14 @@
     <p>Exclusive Beats Store</p>
   </div>
 </header>
+
+<div class="trust-strip">
+  <span>🔒 Secure Payment</span>
+  <span class="dot">•</span>
+  <span>⚡ Instant Confirmation</span>
+  <span class="dot">•</span>
+  <span>🎯 100% Exclusive Rights</span>
+</div>
 
 <div class="container" id="beatsContainer">
   <div class="empty">Loading beats...</div>
@@ -338,6 +391,7 @@
         card.className = 'beat-card';
         card.dataset.beatId = id;
         card.innerHTML = `
+          <div class="exclusive-badge">Exclusive</div>
           <div class="beat-head">
             ${beat.cover ? `<img class="beat-cover" src="covers/${beat.cover}" onerror="this.outerHTML='<div class=&quot;beat-cover-placeholder&quot;>🎵</div>'">` : `<div class="beat-cover-placeholder">🎵</div>`}
             <div class="beat-info">
@@ -367,7 +421,10 @@
           </div>
           <audio preload="none" src="beats/${beat.file}"></audio>
           <div class="beat-footer">
-            <div class="price">₹${beat.price}</div>
+            <div>
+              <div class="price">₹${beat.price}</div>
+              <div class="urgency-line">🔥 Sold once, gone forever</div>
+            </div>
             <button class="buy-btn" onclick='openModal("${id}", ${JSON.stringify(beat.name)}, ${beat.price})'>Buy Now</button>
           </div>
         `;
