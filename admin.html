@@ -36,6 +36,12 @@
     display:flex;align-items:center;gap:8px;
   }
   h2::after{content:'';flex:1;height:1px;background:var(--border);}
+  .collapsible-header{
+    display:flex;align-items:center;gap:10px;cursor:pointer;
+    margin:30px 0 0;
+  }
+  .collapsible-header .chevron{font-size:16px;color:var(--muted);}
+  #addBeatPanel{margin-top:14px;}
 
   .card{
     background:linear-gradient(180deg, var(--card2) 0%, var(--card) 100%);
@@ -156,8 +162,24 @@
       </div>
     </div>
 
-    <h2>➕ Add New Beat</h2>
-    <div class="card">
+    <h2>📦 Orders</h2>
+    <div class="card" id="ordersList">
+      <div class="msg">Loading...</div>
+    </div>
+
+    <h2>🎵 Manage Beats</h2>
+    <div class="field">
+      <input type="text" id="adminSearch" placeholder="🔍 Search beats...">
+    </div>
+    <div class="card" id="beatsList">
+      <div class="msg">Loading...</div>
+    </div>
+
+    <div class="collapsible-header" onclick="toggleAddBeat()">
+      <h2 style="margin:0;border:none;flex:1;">➕ Add New Beat</h2>
+      <span class="chevron" id="addBeatChevron">⌄</span>
+    </div>
+    <div class="card" id="addBeatPanel" style="display:none">
       <div class="field">
         <label>Beat Name (as on YouTube)</label>
         <input type="text" id="beatName" placeholder='e.g. "ACHANAK" - Indian Gangsta Type Beat'>
@@ -188,19 +210,6 @@
       <input type="hidden" id="beatCover">
       <button onclick="addBeat()">Add Beat</button>
       <div class="msg" id="addMsg"></div>
-    </div>
-
-    <h2>🎵 Manage Beats</h2>
-    <div class="field">
-      <input type="text" id="adminSearch" placeholder="🔍 Search beats...">
-    </div>
-    <div class="card" id="beatsList">
-      <div class="msg">Loading...</div>
-    </div>
-
-    <h2>📦 Orders</h2>
-    <div class="card" id="ordersList">
-      <div class="msg">Loading...</div>
     </div>
   </div>
 </div>
@@ -411,6 +420,14 @@
     update(ref(db, 'beats/'+id), updates).then(()=>{
       alert('✅ Updated!');
     });
+  }
+
+  window.toggleAddBeat = function(){
+    const panel = document.getElementById('addBeatPanel');
+    const chevron = document.getElementById('addBeatChevron');
+    const isOpen = panel.style.display !== 'none';
+    panel.style.display = isOpen ? 'none' : 'block';
+    chevron.textContent = isOpen ? '⌄' : '⌃';
   }
 
   window.toggleBeatRow = function(id){
