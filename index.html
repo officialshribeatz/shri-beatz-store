@@ -39,12 +39,16 @@
   header p{font-size:11px;color:var(--muted);}
   .container{max-width:640px;margin:0 auto;padding:16px;}
   .beat-card{
-    background:var(--card);
+    background:linear-gradient(180deg, #181818 0%, #141414 100%);
     border:1px solid var(--border);
-    border-radius:14px;
+    border-radius:16px;
     padding:16px;
     margin-bottom:16px;
+    box-shadow:0 4px 14px rgba(0,0,0,0.35);
+    transition:transform 0.15s ease, border-color 0.15s ease;
   }
+  .beat-card:active{transform:scale(0.99);}
+  .beat-card:hover{border-color:#3a3a3a;}
   .beat-title{
     font-size:16px;
     font-weight:600;
@@ -69,19 +73,21 @@
     align-items:center;
   }
   .price{
-    font-size:18px;
-    font-weight:700;
+    font-size:19px;
+    font-weight:800;
     color:var(--orange);
+    letter-spacing:0.3px;
   }
   .buy-btn{
-    background:var(--orange);
+    background:linear-gradient(135deg, #ffa63d, #ff8c1a);
     color:#000;
     border:none;
-    padding:10px 22px;
+    padding:10px 24px;
     border-radius:30px;
-    font-weight:700;
+    font-weight:800;
     font-size:14px;
     cursor:pointer;
+    box-shadow:0 3px 10px rgba(255,140,26,0.3);
   }
   .buy-btn:active{transform:scale(0.97);}
   .empty{

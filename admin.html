@@ -30,6 +30,17 @@
   .msg{font-size:12px;color:var(--muted);margin-top:8px;text-align:center;}
   .top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
   .top-bar button{width:auto;padding:8px 16px;font-size:12px;}
+  .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+  .stat-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:center;}
+  .stat-card .num{font-size:22px;font-weight:800;color:var(--orange);}
+  .stat-card .label{font-size:11px;color:var(--muted);margin-top:4px;}
+  .beat-row input{width:70px;padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:#0f0f0f;color:var(--text);font-size:12px;margin-left:6px;}
+  .edit-btn{background:#1a2e3a !important;color:#5bc0ff !important;}
+  .beat-row-main{display:flex;flex-direction:column;gap:8px;padding:10px 0;border-bottom:1px solid var(--border);}
+  .beat-row-main:last-child{border-bottom:none;}
+  .beat-row-top{display:flex;justify-content:space-between;align-items:center;font-size:13px;}
+  .beat-row-actions{display:flex;gap:6px;align-items:center;}
+  .beat-row-actions button{width:auto;padding:6px 12px;font-size:11px;}
 </style>
 </head>
 <body>
@@ -53,6 +64,26 @@
     <div class="top-bar">
       <h1 style="margin:0">Admin Panel</h1>
       <button class="secondary" onclick="doLogout()">Logout</button>
+    </div>
+
+    <h2>📊 Overview</h2>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="num" id="statOrders">0</div>
+        <div class="label">Total Orders</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" id="statEarnings">₹0</div>
+        <div class="label">Total Earnings</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" id="statBeats">0</div>
+        <div class="label">Beats Listed</div>
+      </div>
+      <div class="stat-card">
+        <div class="num" id="statPlays">0</div>
+        <div class="label">Total Plays</div>
+      </div>
     </div>
 
     <h2>➕ Add New Beat</h2>
@@ -162,14 +193,41 @@
       const data = snapshot.val();
       const list = document.getElementById('beatsList');
       list.innerHTML='';
-      if(!data){ list.innerHTML = '<div class="msg">No beats yet.</div>'; return; }
+      if(!data){
+        list.innerHTML = '<div class="msg">No beats yet.</div>';
+        document.getElementById('statBeats').textContent = '0';
+        document.getElementById('statPlays').textContent = '0';
+        return;
+      }
+      let totalPlays = 0;
       Object.entries(data).forEach(([id, beat])=>{
+        totalPlays += (beat.plays||0);
         const row = document.createElement('div');
-        row.className='beat-row';
-        row.innerHTML = `<span>${beat.name} — ₹${beat.price} — 🎧${beat.plays||0}</span>
-          <span><button class="del-btn" onclick="deleteBeat('${id}')">Delete</button></span>`;
+        row.className='beat-row-main';
+        row.innerHTML = `
+          <div class="beat-row-top">
+            <span>${beat.name}</span>
+            <span class="muted">🎧${beat.plays||0}</span>
+          </div>
+          <div class="beat-row-actions">
+            <span class="muted">₹</span>
+            <input type="number" id="price-${id}" value="${beat.price}">
+            <button class="edit-btn" onclick="updatePrice('${id}')">Update</button>
+            <button class="del-btn" onclick="deleteBeat('${id}')">Delete</button>
+          </div>
+        `;
         list.appendChild(row);
       });
+      document.getElementById('statBeats').textContent = Object.keys(data).length;
+      document.getElementById('statPlays').textContent = totalPlays;
+    });
+  }
+
+  window.updatePrice = function(id){
+    const newPrice = parseInt(document.getElementById('price-'+id).value);
+    if(!newPrice || newPrice <= 0){ alert('Enter a valid price'); return; }
+    set(ref(db, 'beats/'+id+'/price'), newPrice).then(()=>{
+      alert('Price updated!');
     });
   }
 
@@ -184,9 +242,16 @@
       const data = snapshot.val();
       const list = document.getElementById('ordersList');
       list.innerHTML='';
-      if(!data){ list.innerHTML = '<div class="msg">No orders yet.</div>'; return; }
+      if(!data){
+        list.innerHTML = '<div class="msg">No orders yet.</div>';
+        document.getElementById('statOrders').textContent = '0';
+        document.getElementById('statEarnings').textContent = '₹0';
+        return;
+      }
       const orders = Object.entries(data).sort((a,b)=>(b[1].createdAt||0)-(a[1].createdAt||0));
+      let totalEarnings = 0;
       orders.forEach(([id, o])=>{
+        totalEarnings += (o.price||0);
         const div = document.createElement('div');
         div.className='order-item';
         const date = new Date(o.createdAt).toLocaleString('en-IN');
@@ -197,6 +262,8 @@
         `;
         list.appendChild(div);
       });
+      document.getElementById('statOrders').textContent = orders.length;
+      document.getElementById('statEarnings').textContent = '₹'+totalEarnings;
     });
   }
 </script>
