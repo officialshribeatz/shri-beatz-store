@@ -400,8 +400,12 @@
     <div id="formStep">
       <h3>Buy <span class="modal-beat" id="modalBeatName"></span></h3>
       <div class="field">
-        <label>Your Name</label>
-        <input type="text" id="buyerName" placeholder="Full name">
+        <label>Full Legal Name</label>
+        <input type="text" id="buyerName" placeholder="As per ID (for licensing)">
+      </div>
+      <div class="field">
+        <label>Artist / Stage Name (optional)</label>
+        <input type="text" id="buyerStageName" placeholder="Name to credit in the song">
       </div>
       <div class="field">
         <label>Email</label>
@@ -632,12 +636,14 @@
   window.closeModal = function(){
     document.getElementById('buyOverlay').classList.remove('active');
     document.getElementById('buyerName').value='';
+    document.getElementById('buyerStageName').value='';
     document.getElementById('buyerEmail').value='';
     document.getElementById('buyerPhone').value='';
   }
 
   window.proceedToPay = function(){
     const name = document.getElementById('buyerName').value.trim();
+    const stageName = document.getElementById('buyerStageName').value.trim();
     const email = document.getElementById('buyerEmail').value.trim();
     const phone = document.getElementById('buyerPhone').value.trim();
     if(!name || !phone){
@@ -658,6 +664,7 @@
           beatName: currentBeat.name,
           price: currentBeat.price,
           buyerName: name,
+          buyerStageName: stageName,
           buyerEmail: email,
           buyerPhone: phone,
           paymentId: response.razorpay_payment_id,
