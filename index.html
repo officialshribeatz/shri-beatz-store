@@ -412,7 +412,7 @@
         <input type="email" id="buyerEmail" placeholder="you@example.com">
       </div>
       <div class="field">
-        <label>WhatsApp Number</label>
+        <label>WhatsApp Number (optional)</label>
         <input type="tel" id="buyerPhone" placeholder="10-digit number">
       </div>
       <div class="modal-actions">
@@ -646,8 +646,8 @@
     const stageName = document.getElementById('buyerStageName').value.trim();
     const email = document.getElementById('buyerEmail').value.trim();
     const phone = document.getElementById('buyerPhone').value.trim();
-    if(!name || !phone){
-      alert('Please enter your name and WhatsApp number.');
+    if(!name || !email){
+      alert('Please enter your name and email.');
       return;
     }
     const options = {
