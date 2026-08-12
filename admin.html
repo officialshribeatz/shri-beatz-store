@@ -6,48 +6,109 @@
 <title>Admin - Shri Beatz</title>
 <style>
   :root{
-    --bg:#0a0a0a;--card:#161616;--orange:#ff8c1a;--text:#f2f2f2;--muted:#9a9a9a;--border:#2a2a2a;
+    --bg:#0a0a0a;--bg2:#0f0f0f;--card:#161616;--card2:#1b1b1b;--orange:#ff8c1a;--orange-dim:#ffa63d;
+    --text:#f2f2f2;--muted:#8f8f8f;--border:#252525;--green:#3ecf8e;--red:#ff5c5c;
   }
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Roboto,Arial,sans-serif;padding-bottom:40px;}
-  .container{max-width:640px;margin:0 auto;padding:16px;}
-  h1{color:var(--orange);font-size:20px;margin-bottom:20px;}
-  h2{font-size:15px;margin:24px 0 12px;color:var(--orange);}
-  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:16px;}
-  .field{margin-bottom:14px;}
-  .field label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px;}
-  .field input{width:100%;padding:12px;border-radius:10px;border:1px solid var(--border);background:#0f0f0f;color:var(--text);font-size:14px;}
-  button{background:var(--orange);color:#000;border:none;padding:12px 20px;border-radius:30px;font-weight:700;font-size:14px;cursor:pointer;width:100%;}
-  button.secondary{background:#222;color:var(--text);margin-top:8px;}
-  .order-item{border-bottom:1px solid var(--border);padding:12px 0;font-size:13px;}
+  body{
+    background:radial-gradient(ellipse at top, #121212 0%, #0a0a0a 60%);
+    color:var(--text);
+    font-family:'Segoe UI',Roboto,Arial,sans-serif;
+    padding-bottom:50px;
+    min-height:100vh;
+  }
+  .container{max-width:680px;margin:0 auto;padding:20px 16px;}
+  .top-bar{
+    display:flex;justify-content:space-between;align-items:center;
+    margin-bottom:28px;padding-bottom:16px;border-bottom:1px solid var(--border);
+  }
+  .top-bar h1{margin:0;font-size:22px;letter-spacing:0.3px;}
+  .top-bar h1 span{color:var(--orange);}
+  .top-bar button{
+    width:auto;padding:9px 18px;font-size:12px;background:#1c1c1c;color:var(--muted);
+    border:1px solid var(--border);border-radius:8px;font-weight:600;
+  }
+  .top-bar button:hover{color:var(--text);border-color:#444;}
+
+  h2{
+    font-size:13px;margin:30px 0 14px;color:var(--muted);
+    text-transform:uppercase;letter-spacing:1.2px;font-weight:700;
+    display:flex;align-items:center;gap:8px;
+  }
+  h2::after{content:'';flex:1;height:1px;background:var(--border);}
+
+  .card{
+    background:linear-gradient(180deg, var(--card2) 0%, var(--card) 100%);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:22px;
+    margin-bottom:18px;
+    box-shadow:0 4px 18px rgba(0,0,0,0.3);
+  }
+
+  .field{margin-bottom:16px;}
+  .field label{
+    font-size:11px;color:var(--muted);display:block;margin-bottom:7px;
+    text-transform:uppercase;letter-spacing:0.6px;font-weight:600;
+  }
+  .field input{
+    width:100%;padding:13px 14px;border-radius:10px;border:1px solid var(--border);
+    background:#0d0d0d;color:var(--text);font-size:14px;transition:border-color 0.15s;
+  }
+  .field input:focus{outline:none;border-color:var(--orange);}
+  .field input::placeholder{color:#5a5a5a;}
+
+  button{
+    background:linear-gradient(135deg, var(--orange-dim), var(--orange));
+    color:#0a0a0a;border:none;padding:13px 20px;border-radius:10px;
+    font-weight:700;font-size:13px;cursor:pointer;width:100%;
+    box-shadow:0 3px 12px rgba(255,140,26,0.25);
+    transition:transform 0.1s;
+  }
+  button:active{transform:scale(0.98);}
+  button.secondary{background:#1c1c1c;color:var(--muted);box-shadow:none;border:1px solid var(--border);}
+
+  .order-item{border-bottom:1px solid var(--border);padding:14px 0;font-size:13px;}
   .order-item:last-child{border-bottom:none;}
-  .order-item .row{display:flex;justify-content:space-between;margin-bottom:4px;}
-  .order-item .muted{color:var(--muted);font-size:12px;}
-  .beat-row{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding:10px 0;font-size:13px;}
-  .beat-row button{width:auto;padding:6px 14px;font-size:12px;margin-left:8px;}
-  .del-btn{background:#3a1a1a !important;color:#ff6b6b !important;}
-  #loginBox{max-width:340px;margin:80px auto;}
-  .msg{font-size:12px;color:var(--muted);margin-top:8px;text-align:center;}
-  .top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
-  .top-bar button{width:auto;padding:8px 16px;font-size:12px;}
-  .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
-  .stat-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:center;}
-  .stat-card .num{font-size:22px;font-weight:800;color:var(--orange);}
-  .stat-card .label{font-size:11px;color:var(--muted);margin-top:4px;}
-  .beat-row input{width:70px;padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:#0f0f0f;color:var(--text);font-size:12px;margin-left:6px;}
-  .edit-btn{background:#1a2e3a !important;color:#5bc0ff !important;}
-  .beat-row-main{display:flex;flex-direction:column;gap:8px;padding:10px 0;border-bottom:1px solid var(--border);}
+  .order-item .row{display:flex;justify-content:space-between;margin-bottom:5px;font-size:14px;}
+  .order-item .row b{font-weight:700;}
+  .order-item .muted{color:var(--muted);font-size:11.5px;line-height:1.6;}
+
+  .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;}
+  .stat-card{
+    background:linear-gradient(150deg, #181818, #121212);
+    border:1px solid var(--border);border-radius:16px;padding:20px 16px;text-align:center;
+    box-shadow:0 4px 14px rgba(0,0,0,0.25);
+  }
+  .stat-card .num{font-size:26px;font-weight:800;color:var(--orange);letter-spacing:0.5px;}
+  .stat-card .label{font-size:10.5px;color:var(--muted);margin-top:6px;text-transform:uppercase;letter-spacing:0.8px;font-weight:600;}
+
+  .beat-row-main{padding:14px 0;border-bottom:1px solid var(--border);}
   .beat-row-main:last-child{border-bottom:none;}
-  .beat-row-top{display:flex;justify-content:space-between;align-items:center;font-size:13px;}
-  .beat-row-actions{display:flex;gap:6px;align-items:center;}
-  .beat-row-actions button{width:auto;padding:6px 12px;font-size:11px;}
+  .beat-row-top{display:flex;justify-content:space-between;align-items:center;font-size:13.5px;margin-bottom:10px;}
+  .beat-row-top span:first-child{font-weight:600;}
+  .beat-row-actions{display:flex;gap:8px;align-items:center;}
+  .beat-row-actions input{
+    width:80px;padding:9px 10px;border-radius:8px;border:1px solid var(--border);
+    background:#0d0d0d;color:var(--text);font-size:13px;
+  }
+  .beat-row-actions button{width:auto;padding:9px 16px;font-size:11.5px;box-shadow:none;}
+  .edit-btn{background:#16283a !important;color:#5bc0ff !important;border:1px solid #1f3a52;}
+  .del-btn{background:#2e1414 !important;color:var(--red) !important;border:1px solid #442020;}
+
+  #loginBox{max-width:360px;margin:100px auto 0;text-align:center;}
+  #loginBox h1{font-size:24px;margin-bottom:6px;}
+  #loginBox h1 span{color:var(--orange);}
+  #loginBox .sub{color:var(--muted);font-size:12.5px;margin-bottom:24px;}
+  .msg{font-size:12px;color:var(--muted);margin-top:10px;text-align:center;}
 </style>
 </head>
 <body>
 
 <div class="container">
   <div id="loginBox" class="card">
-    <h1>Shri Beatz Admin</h1>
+    <h1>Shri <span>Beatz</span></h1>
+    <div class="sub">Admin Dashboard</div>
     <div class="field">
       <label>Email</label>
       <input type="email" id="loginEmail" placeholder="admin email">
@@ -62,7 +123,7 @@
 
   <div id="adminPanel" style="display:none">
     <div class="top-bar">
-      <h1 style="margin:0">Admin Panel</h1>
+      <h1>Admin <span>Panel</span></h1>
       <button class="secondary" onclick="doLogout()">Logout</button>
     </div>
 
