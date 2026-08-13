@@ -469,11 +469,23 @@
       renderedIds = new Set();
       return;
     }
-    const beats = Object.entries(data).sort((a,b)=> (b[1].createdAt||0)-(a[1].createdAt||0));
+    // Sort by manual "order" field first (lower = shown first). Beats without an order
+    // fall back to newest-first, and always appear after ordered ones.
+    const beats = Object.entries(data).sort((a,b)=>{
+      const oa = a[1].order;
+      const ob = b[1].order;
+      const aHas = typeof oa === 'number';
+      const bHas = typeof ob === 'number';
+      if(aHas && bHas) return oa - ob;
+      if(aHas && !bHas) return -1;
+      if(!aHas && bHas) return 1;
+      return (b[1].createdAt||0)-(a[1].createdAt||0);
+    });
     const currentIds = new Set(beats.map(b=>b[0]));
 
-    // If the set of beats changed (added/removed), do a full rebuild
-    const idsChanged = currentIds.size !== renderedIds.size || [...currentIds].some(id=>!renderedIds.has(id));
+    // If the set of beats changed (added/removed) OR their order changed, do a full rebuild
+    const orderChanged = beats.map(b=>b[0]).join(',') !== [...renderedIds].join(',');
+    const idsChanged = currentIds.size !== renderedIds.size || [...currentIds].some(id=>!renderedIds.has(id)) || orderChanged;
 
     if(idsChanged){
       container.innerHTML = '';
