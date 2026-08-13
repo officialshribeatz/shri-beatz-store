@@ -204,17 +204,13 @@
         <input type="number" id="beatPrice" placeholder="50">
       </div>
       <div class="field">
-        <label>Preview Audio (mp3)</label>
-        <input type="file" id="beatFileUpload" accept="audio/mpeg,audio/mp3">
-        <div class="msg" id="fileUploadMsg"></div>
+        <label>Preview Audio Filename (upload mp3 to /beats/ folder on GitHub first, then type exact filename here)</label>
+        <input type="text" id="beatFile" placeholder="e.g. mybeat.mp3">
       </div>
       <div class="field">
-        <label>Cover Image (optional)</label>
-        <input type="file" id="beatCoverUpload" accept="image/*">
-        <div class="msg" id="coverUploadMsg"></div>
+        <label>Cover Image Filename (upload image to /covers/ folder on GitHub first, then type exact filename here)</label>
+        <input type="text" id="beatCover" placeholder="e.g. mycover.jpg">
       </div>
-      <input type="hidden" id="beatFile">
-      <input type="hidden" id="beatCover">
       <button onclick="addBeat()">Add Beat</button>
       <div class="msg" id="addMsg"></div>
     </div>
@@ -265,51 +261,6 @@
       document.getElementById('adminPanel').style.display='none';
     }
   });
-
-  // ---- Secure upload via Netlify Function (token hidden server-side) ----
-  function fileToBase64(file){
-    return new Promise((resolve, reject)=>{
-      const reader = new FileReader();
-      reader.onload = ()=> resolve(reader.result.split(',')[1]);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  }
-
-  async function uploadToGithub(path, file, statusEl){
-    statusEl.textContent = 'Uploading...';
-    const content = await fileToBase64(file);
-    const res = await fetch('/.netlify/functions/upload', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path, content })
-    });
-    if(res.ok){
-      statusEl.textContent = '✅ Uploaded: ' + path.split('/').pop();
-      return true;
-    } else {
-      const err = await res.json();
-      statusEl.textContent = '❌ Upload failed: ' + (err.message||'Unknown error');
-      return false;
-    }
-  }
-
-  document.getElementById('beatFileUpload').addEventListener('change', async (e)=>{
-    const file = e.target.files[0];
-    if(!file) return;
-    const safeName = file.name.toLowerCase().replace(/[^a-z0-9.]/g,'-');
-    const ok = await uploadToGithub('beats/'+safeName, file, document.getElementById('fileUploadMsg'));
-    if(ok) document.getElementById('beatFile').value = safeName;
-  });
-
-  document.getElementById('beatCoverUpload').addEventListener('change', async (e)=>{
-    const file = e.target.files[0];
-    if(!file) return;
-    const safeName = file.name.toLowerCase().replace(/[^a-z0-9.]/g,'-');
-    const ok = await uploadToGithub('covers/'+safeName, file, document.getElementById('coverUploadMsg'));
-    if(ok) document.getElementById('beatCover').value = safeName;
-  });
-  // ---- end GitHub direct upload ----
 
   window.addBeat = function(){
     const name = document.getElementById('beatName').value.trim();
