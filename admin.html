@@ -114,6 +114,15 @@
   .beat-row-actions button{width:auto;padding:9px 16px;font-size:11.5px;box-shadow:none;flex:1;}
   .edit-btn{background:#16283a !important;color:#5bc0ff !important;border:1px solid #1f3a52;}
   .del-btn{background:#2e1414 !important;color:var(--red) !important;border:1px solid #442020;}
+  .move-btns{display:flex;flex-direction:column;gap:2px;margin-right:6px;}
+  .move-btns button{
+    width:26px;height:22px;padding:0;font-size:11px;line-height:1;
+    background:#1c1c1c !important;color:var(--muted) !important;
+    border:1px solid var(--border);box-shadow:none;border-radius:6px;
+  }
+  .move-btns button:disabled{opacity:0.25;}
+  .beat-summary{display:flex;align-items:center;gap:0;}
+  .beat-summary-clickable{display:flex;justify-content:space-between;align-items:center;flex:1;cursor:pointer;padding:14px 4px;}
 
   #loginBox{max-width:360px;margin:100px auto 0;text-align:center;}
   #loginBox h1{font-size:24px;margin-bottom:6px;}
@@ -277,6 +286,7 @@
     set(beatRef, {
       name, genre, key, price, file, cover,
       plays: 0,
+      order: window.__nextOrder != null ? window.__nextOrder : Date.now(),
       createdAt: Date.now()
     }).then(()=>{
       document.getElementById('addMsg').textContent = '✅ Beat added!';
@@ -301,18 +311,35 @@
         return;
       }
       let totalPlays = 0;
-      Object.entries(data).forEach(([id, beat])=>{
+      const sortedEntries = Object.entries(data).sort((a,b)=>{
+        const oa = a[1].order, ob = b[1].order;
+        const aHas = typeof oa === 'number', bHas = typeof ob === 'number';
+        if(aHas && bHas) return oa - ob;
+        if(aHas && !bHas) return -1;
+        if(!aHas && bHas) return 1;
+        return (a[1].createdAt||0)-(b[1].createdAt||0);
+      });
+      window.__sortedBeatIds = sortedEntries.map(e=>e[0]);
+      const maxOrder = sortedEntries.reduce((m,[,b])=> typeof b.order==='number' ? Math.max(m,b.order) : m, -1);
+      window.__nextOrder = maxOrder + 1;
+      sortedEntries.forEach(([id, beat])=>{
         totalPlays += (beat.plays||0);
         const row = document.createElement('div');
         row.className='beat-row-main';
         row.dataset.search = `${beat.name||''} ${beat.genre||''} ${beat.key||''}`.toLowerCase();
         row.innerHTML = `
-          <div class="beat-summary" onclick="toggleBeatRow('${id}')">
-            <div class="beat-summary-info">
-              <div class="beat-summary-name">${beat.name||'Untitled'}</div>
-              <div class="beat-summary-meta">₹${beat.price||0} · 🎧 ${beat.plays||0} plays${beat.genre ? ' · '+beat.genre : ''}</div>
+          <div class="beat-summary">
+            <div class="move-btns">
+              <button onclick="event.stopPropagation();moveBeat('${id}','up')" title="Move up">▲</button>
+              <button onclick="event.stopPropagation();moveBeat('${id}','down')" title="Move down">▼</button>
             </div>
-            <span class="chevron" id="chevron-${id}">⌄</span>
+            <div class="beat-summary-clickable" onclick="toggleBeatRow('${id}')">
+              <div class="beat-summary-info">
+                <div class="beat-summary-name">${beat.name||'Untitled'}</div>
+                <div class="beat-summary-meta">₹${beat.price||0} · 🎧 ${beat.plays||0} plays${beat.genre ? ' · '+beat.genre : ''}</div>
+              </div>
+              <span class="chevron" id="chevron-${id}">⌄</span>
+            </div>
           </div>
           <div class="beat-edit-panel" id="panel-${id}" style="display:none">
             <div class="beat-edit-grid">
@@ -394,6 +421,23 @@
     const isOpen = panel.style.display !== 'none';
     panel.style.display = isOpen ? 'none' : 'block';
     chevron.textContent = isOpen ? '⌄' : '⌃';
+  }
+
+  window.moveBeat = function(id, direction){
+    const ids = window.__sortedBeatIds || [];
+    const idx = ids.indexOf(id);
+    if(idx === -1) return;
+    const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if(swapIdx < 0 || swapIdx >= ids.length) return;
+    const otherId = ids[swapIdx];
+    // Assign fresh sequential order values to the whole list based on new arrangement
+    const newIds = [...ids];
+    [newIds[idx], newIds[swapIdx]] = [newIds[swapIdx], newIds[idx]];
+    const updates = {};
+    newIds.forEach((bid, i)=>{
+      updates['beats/'+bid+'/order'] = i;
+    });
+    update(ref(db), updates);
   }
 
   window.deleteBeat = function(id){
