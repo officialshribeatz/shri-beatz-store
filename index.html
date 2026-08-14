@@ -99,10 +99,33 @@
     margin-bottom:18px;
     box-shadow:0 8px 24px rgba(0,0,0,0.4);
     position:relative;
+    transition:opacity 0.2s;
   }
   .beat-card.highlighted{
     border:1.5px solid var(--orange);
     box-shadow:0 8px 28px rgba(255,140,26,0.25);
+  }
+  .beat-card.dimmed{
+    opacity:0.55;
+  }
+  .highlight-banner{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    background:linear-gradient(135deg, #ffb44d, #ff8c1a);
+    color:#1a0f00;
+    font-size:11px;
+    font-weight:800;
+    padding:6px 12px;
+    border-radius:20px;
+    margin-bottom:14px;
+    letter-spacing:0.2px;
+  }
+  .beat-cover.large{
+    width:110px;height:110px;border-radius:16px;
+  }
+  .beat-cover-placeholder.large{
+    width:110px;height:110px;border-radius:16px;font-size:34px;
   }
   .beat-head{
     display:flex;
@@ -510,15 +533,19 @@
       beats.forEach(([id, beat])=>{
         const card = document.createElement('div');
         card.className = 'beat-card';
-        if(highlightSlug && slugify(beat.name) === highlightSlug){
+        const isHighlighted = highlightSlug && slugify(beat.name) === highlightSlug;
+        if(isHighlighted){
           card.classList.add('highlighted');
+        } else if(highlightSlug){
+          card.classList.add('dimmed');
         }
         card.dataset.beatId = id;
         card.dataset.search = `${beat.name||''} ${beat.genre||''} ${beat.key||''}`.toLowerCase();
         card.innerHTML = `
           <div class="exclusive-badge">Exclusive</div>
+          ${isHighlighted ? `<div class="highlight-banner">👉 This is the beat you're looking for</div>` : ''}
           <div class="beat-head">
-            ${beat.cover ? `<img class="beat-cover" src="covers/${beat.cover}" onerror="this.outerHTML='<div class=&quot;beat-cover-placeholder&quot;>🎵</div>'">` : `<div class="beat-cover-placeholder">🎵</div>`}
+            ${beat.cover ? `<img class="beat-cover${isHighlighted ? ' large' : ''}" src="covers/${beat.cover}" onerror="this.outerHTML='<div class=&quot;beat-cover-placeholder${isHighlighted ? ' large' : ''}&quot;>🎵</div>'">` : `<div class="beat-cover-placeholder${isHighlighted ? ' large' : ''}">🎵</div>`}
             <div class="beat-info">
               <div class="beat-title">${beat.name}</div>
               <div class="beat-tags">
