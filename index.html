@@ -100,6 +100,10 @@
     box-shadow:0 8px 24px rgba(0,0,0,0.4);
     position:relative;
   }
+  .beat-card.highlighted{
+    border:1.5px solid var(--orange);
+    box-shadow:0 8px 28px rgba(255,140,26,0.25);
+  }
   .beat-head{
     display:flex;
     gap:16px;
@@ -469,9 +473,23 @@
       renderedIds = new Set();
       return;
     }
+    // If the URL has ?beat=some-name, that beat is pushed to the very top
+    // so YouTube/Instagram links can point straight at one specific beat.
+    function slugify(str){
+      return (str||'').toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+    }
+    const urlParams = new URLSearchParams(window.location.search);
+    const highlightSlug = slugify(urlParams.get('beat'));
+
     // Sort by manual "order" field first (lower = shown first). Beats without an order
     // fall back to newest-first, and always appear after ordered ones.
     const beats = Object.entries(data).sort((a,b)=>{
+      if(highlightSlug){
+        const aMatch = slugify(a[1].name) === highlightSlug;
+        const bMatch = slugify(b[1].name) === highlightSlug;
+        if(aMatch && !bMatch) return -1;
+        if(!aMatch && bMatch) return 1;
+      }
       const oa = a[1].order;
       const ob = b[1].order;
       const aHas = typeof oa === 'number';
@@ -492,6 +510,9 @@
       beats.forEach(([id, beat])=>{
         const card = document.createElement('div');
         card.className = 'beat-card';
+        if(highlightSlug && slugify(beat.name) === highlightSlug){
+          card.classList.add('highlighted');
+        }
         card.dataset.beatId = id;
         card.dataset.search = `${beat.name||''} ${beat.genre||''} ${beat.key||''}`.toLowerCase();
         card.innerHTML = `

@@ -114,6 +114,7 @@
   .beat-row-actions button{width:auto;padding:9px 16px;font-size:11.5px;box-shadow:none;flex:1;}
   .edit-btn{background:#16283a !important;color:#5bc0ff !important;border:1px solid #1f3a52;}
   .del-btn{background:#2e1414 !important;color:var(--red) !important;border:1px solid #442020;}
+  .link-btn{background:#1a2e1a !important;color:var(--green) !important;border:1px solid #24401f;}
   .move-btns{display:flex;flex-direction:column;gap:2px;margin-right:6px;}
   .move-btns button{
     width:26px;height:22px;padding:0;font-size:11px;line-height:1;
@@ -365,6 +366,7 @@
               </div>
             </div>
             <div class="beat-row-actions">
+              <button class="link-btn" onclick="copyBeatLink('${id}', ${JSON.stringify(beat.name||'')})">🔗 Copy Link</button>
               <button class="edit-btn" onclick="updateBeat('${id}')">Save Changes</button>
               <button class="del-btn" onclick="deleteBeat('${id}')">Delete</button>
             </div>
@@ -421,6 +423,22 @@
     const isOpen = panel.style.display !== 'none';
     panel.style.display = isOpen ? 'none' : 'block';
     chevron.textContent = isOpen ? '⌄' : '⌃';
+  }
+
+  const SITE_BASE_URL = "https://officialshribeatz.github.io/shri-beatz-store/";
+
+  function slugify(str){
+    return (str||'').toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+  }
+
+  window.copyBeatLink = function(id, name){
+    const slug = slugify(name);
+    const link = SITE_BASE_URL + '?beat=' + slug;
+    navigator.clipboard.writeText(link).then(()=>{
+      alert('✅ Link copied:\n' + link);
+    }).catch(()=>{
+      prompt('Copy this link manually:', link);
+    });
   }
 
   window.moveBeat = function(id, direction){
