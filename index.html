@@ -702,6 +702,42 @@
           if(playTimer){ clearTimeout(playTimer); playTimer=null; }
         });
 
+        // Clicking anywhere on the card (except play/buy controls) makes it the new
+        // featured/highlighted beat right where it already sits — no reordering —
+        // and smoothly scrolls it into view.
+        card.addEventListener('click', (e)=>{
+          if(e.target.closest('.play-btn') || e.target.closest('.buy-btn') || e.target.closest('.progress-wrap')) return;
+          const clickedSlug = slugify(beat.name);
+          if(window.__highlightSlug === clickedSlug) return;
+          window.__highlightSlug = clickedSlug;
+          const newUrl = window.location.pathname + '?beat=' + encodeURIComponent(clickedSlug);
+          window.history.replaceState({}, '', newUrl);
+
+          container.querySelectorAll('.beat-card').forEach(c=>{
+            c.classList.remove('highlighted');
+            c.classList.add('dimmed');
+            const banner = c.querySelector('.highlight-banner');
+            if(banner){
+              const spacer = document.createElement('div');
+              banner.replaceWith(spacer);
+            }
+            const cover = c.querySelector('.beat-cover, .beat-cover-placeholder');
+            if(cover) cover.classList.remove('large');
+          });
+          card.classList.remove('dimmed');
+          card.classList.add('highlighted');
+          const topRow = card.querySelector('.card-top-row');
+          const existingFirst = topRow.firstElementChild;
+          const banner = document.createElement('div');
+          banner.className = 'highlight-banner';
+          banner.textContent = "👉 This is the beat you're looking for";
+          existingFirst.replaceWith(banner);
+          const coverEl = card.querySelector('.beat-cover, .beat-cover-placeholder');
+          if(coverEl) coverEl.classList.add('large');
+
+          card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+
         container.appendChild(card);
       });
       renderedIds = currentIds;
