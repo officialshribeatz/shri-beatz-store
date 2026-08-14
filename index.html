@@ -320,7 +320,6 @@
     color:#fff;
     box-shadow:0 2px 8px rgba(124,58,237,0.35);
   }
-  .cart-buy-btn svg{width:15px;height:15px;flex-shrink:0;}
   .cart-buy-btn:active{transform:scale(0.96);}
   /* Compact list-row style for non-featured beats */
   .beat-card.dimmed .card-top-row{
@@ -361,8 +360,7 @@
   .beat-card.dimmed .player-track-row{display:none;}
   .beat-card.dimmed .beat-footer{display:none;}
   .beat-card.dimmed .mini-footer{display:flex;margin-top:2px;}
-  .beat-card.dimmed .cart-buy-btn{padding:5px 12px;font-size:11px;gap:4px;}
-  .beat-card.dimmed .cart-buy-btn svg{width:12px;height:12px;}
+  .beat-card.dimmed .cart-buy-btn{padding:6px 14px;font-size:11px;}
   /* Hero style for the featured (highlighted / focused) beat */
   .beat-card.highlighted .beat-head,
   .beat-card.focused .beat-head{
@@ -768,8 +766,7 @@
               </div>
               <div class="mini-footer">
                 <button class="cart-buy-btn" onclick='openModal("${id}", ${JSON.stringify(beat.name)}, ${beat.price})'>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-                  ₹${beat.price}
+                  Buy Now ₹${beat.price}
                 </button>
               </div>
             </div>
