@@ -741,28 +741,21 @@
           if(playTimer){ clearTimeout(playTimer); playTimer=null; }
         });
 
-        // Clicking a beat (except the play/buy controls) makes it stand out visually
-        // (border glow + bigger cover) and smoothly scrolls it into view. This never
-        // touches the "this is the beat you're looking for" banner — that stays
-        // permanently on whichever beat the visitor's link (?beat=...) pointed to.
+        // Clicking a beat (except play/buy controls) makes it the new featured beat —
+        // it moves to the top of the list with the full hero layout, banner included.
         card.addEventListener('click', (e)=>{
           if(e.target.closest('.play-btn') || e.target.closest('.buy-btn') || e.target.closest('.progress-wrap')) return;
-          if(card.dataset.isOriginal === '1'){
-            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            return;
-          }
-          container.querySelectorAll('.beat-card.focused').forEach(c=>{
-            if(c.dataset.isOriginal === '1') return;
-            c.classList.remove('focused');
-            c.classList.add('dimmed');
-            const cover = c.querySelector('.beat-cover, .beat-cover-placeholder');
-            if(cover) cover.classList.remove('large');
-          });
-          card.classList.remove('dimmed');
-          card.classList.add('focused');
-          const coverEl = card.querySelector('.beat-cover, .beat-cover-placeholder');
-          if(coverEl) coverEl.classList.add('large');
-          card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          const clickedSlug = slugify(beat.name);
+          if(window.__highlightSlug === clickedSlug) return;
+          window.__highlightSlug = clickedSlug;
+          const newUrl = window.location.pathname + '?beat=' + encodeURIComponent(clickedSlug);
+          window.history.replaceState({}, '', newUrl);
+          container.classList.add('fading');
+          setTimeout(()=>{
+            renderBeats(lastBeatsData, true);
+            container.classList.remove('fading');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }, 220);
         });
 
         container.appendChild(card);
