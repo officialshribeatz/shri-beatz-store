@@ -109,7 +109,8 @@
     transition:opacity 0.2s;
     animation:slideInTop 0.4s ease;
   }
-  .beat-card.highlighted{
+  .beat-card.highlighted,
+  .beat-card.focused{
     border:1.5px solid var(--orange);
     box-shadow:0 8px 28px rgba(255,140,26,0.25);
     animation:highlightGlow 2s ease-in-out infinite;
@@ -590,6 +591,7 @@
         } else if(highlightSlug){
           card.classList.add('dimmed');
         }
+        card.dataset.isOriginal = isHighlighted ? '1' : '0';
         card.dataset.beatId = id;
         card.dataset.search = `${beat.name||''} ${beat.genre||''} ${beat.key||''}`.toLowerCase();
         card.innerHTML = `
@@ -702,39 +704,27 @@
           if(playTimer){ clearTimeout(playTimer); playTimer=null; }
         });
 
-        // Clicking anywhere on the card (except play/buy controls) makes it the new
-        // featured/highlighted beat right where it already sits — no reordering —
-        // and smoothly scrolls it into view.
+        // Clicking a beat (except the play/buy controls) makes it stand out visually
+        // (border glow + bigger cover) and smoothly scrolls it into view. This never
+        // touches the "this is the beat you're looking for" banner — that stays
+        // permanently on whichever beat the visitor's link (?beat=...) pointed to.
         card.addEventListener('click', (e)=>{
           if(e.target.closest('.play-btn') || e.target.closest('.buy-btn') || e.target.closest('.progress-wrap')) return;
-          const clickedSlug = slugify(beat.name);
-          if(window.__highlightSlug === clickedSlug) return;
-          window.__highlightSlug = clickedSlug;
-          const newUrl = window.location.pathname + '?beat=' + encodeURIComponent(clickedSlug);
-          window.history.replaceState({}, '', newUrl);
-
-          container.querySelectorAll('.beat-card').forEach(c=>{
-            c.classList.remove('highlighted');
+          if(card.dataset.isOriginal === '1'){
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+          }
+          container.querySelectorAll('.beat-card.focused').forEach(c=>{
+            if(c.dataset.isOriginal === '1') return;
+            c.classList.remove('focused');
             c.classList.add('dimmed');
-            const banner = c.querySelector('.highlight-banner');
-            if(banner){
-              const spacer = document.createElement('div');
-              banner.replaceWith(spacer);
-            }
             const cover = c.querySelector('.beat-cover, .beat-cover-placeholder');
             if(cover) cover.classList.remove('large');
           });
           card.classList.remove('dimmed');
-          card.classList.add('highlighted');
-          const topRow = card.querySelector('.card-top-row');
-          const existingFirst = topRow.firstElementChild;
-          const banner = document.createElement('div');
-          banner.className = 'highlight-banner';
-          banner.textContent = "👉 This is the beat you're looking for";
-          existingFirst.replaceWith(banner);
+          card.classList.add('focused');
           const coverEl = card.querySelector('.beat-cover, .beat-cover-placeholder');
           if(coverEl) coverEl.classList.add('large');
-
           card.scrollIntoView({ behavior: 'smooth', block: 'center' });
         });
 
