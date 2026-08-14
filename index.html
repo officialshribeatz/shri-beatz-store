@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#0a0a0a">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#0a0a0a;
@@ -29,7 +29,7 @@
       radial-gradient(circle, rgba(255,255,255,0.025) 1px, transparent 1px);
     background-size: auto, auto, 22px 22px;
     color:var(--text);
-    font-family:'Poppins','Segoe UI',Roboto,Arial,sans-serif;
+    font-family:'Outfit','Segoe UI',Roboto,Arial,sans-serif;
     padding-bottom:60px;
   }
   header{
@@ -341,12 +341,26 @@
   }
   .cart-buy-btn:active{transform:scale(0.96);}
   /* Compact list-row style for non-featured beats */
+  .beat-card.dimmed{
+    position:relative;
+    padding-right:130px;
+  }
   .beat-card.dimmed .card-top-row{
-    margin-bottom:2px;
+    display:block;
+    position:absolute;
+    top:6px;
+    right:8px;
+    margin-bottom:0;
+  }
+  .beat-card.dimmed .card-top-row > div:first-child{
+    display:none;
   }
   .beat-card.dimmed .exclusive-badge{
     font-size:7px;
     padding:2px 6px;
+  }
+  .beat-card.dimmed{
+    padding-top:22px;
   }
   .beat-card.dimmed .beat-head{
     margin-bottom:0;
@@ -378,7 +392,14 @@
   }
   .beat-card.dimmed .player-track-row{display:none;}
   .beat-card.dimmed .beat-footer{display:none;}
-  .beat-card.dimmed .mini-footer{display:flex;margin-top:2px;}
+  .beat-card.dimmed .mini-footer{
+    display:flex;
+    position:absolute;
+    right:8px;
+    top:50%;
+    transform:translateY(-50%);
+    margin-top:0;
+  }
   .beat-card.dimmed .cart-buy-btn{padding:6px 14px;font-size:11px;}
   /* Hero style for the featured (highlighted / focused) beat */
   .beat-card.highlighted .beat-head,
