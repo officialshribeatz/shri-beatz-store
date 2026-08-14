@@ -104,7 +104,11 @@
   .beat-card.highlighted{
     border:1.5px solid var(--orange);
     box-shadow:0 8px 28px rgba(255,140,26,0.25);
-    animation:highlightGlow 2s ease-in-out infinite;
+    animation:highlightGlow 2s ease-in-out infinite, slideInTop 0.4s ease;
+  }
+  @keyframes slideInTop{
+    from{ transform:translateY(-14px); opacity:0; }
+    to{ transform:translateY(0); opacity:1; }
   }
   @keyframes highlightGlow{
     0%,100%{box-shadow:0 8px 28px rgba(255,140,26,0.25);}
@@ -240,6 +244,12 @@
     font-variant-numeric:tabular-nums;
   }
   audio{display:none;}
+  #beatsList{
+    transition:opacity 0.25s ease;
+  }
+  #beatsList.fading{
+    opacity:0;
+  }
   .beat-footer{
     display:flex;
     justify-content:space-between;
@@ -665,8 +675,12 @@
           window.__highlightSlug = clickedSlug;
           const newUrl = window.location.pathname + '?beat=' + encodeURIComponent(clickedSlug);
           window.history.replaceState({}, '', newUrl);
-          renderBeats(lastBeatsData, true);
-          window.scrollTo({ top: 0, behavior: 'smooth' });
+          container.classList.add('fading');
+          setTimeout(()=>{
+            renderBeats(lastBeatsData, true);
+            container.classList.remove('fading');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }, 220);
         });
 
         container.appendChild(card);
