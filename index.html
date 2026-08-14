@@ -8,6 +8,9 @@
 <link rel="icon" href="logo.png">
 <link rel="apple-touch-icon" href="logo.png">
 <meta name="theme-color" content="#0a0a0a">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#0a0a0a;
@@ -26,7 +29,7 @@
       radial-gradient(circle, rgba(255,255,255,0.025) 1px, transparent 1px);
     background-size: auto, auto, 22px 22px;
     color:var(--text);
-    font-family:'Segoe UI',Roboto,Arial,sans-serif;
+    font-family:'Poppins','Segoe UI',Roboto,Arial,sans-serif;
     padding-bottom:60px;
   }
   header{
@@ -270,8 +273,24 @@
     border-radius:16px;
     padding:12px 16px;
     margin-bottom:16px;
+    display:flex;
+    align-items:center;
+    gap:12px;
   }
-  .player-track{display:flex;flex-direction:column;gap:7px;}
+  .track-play-btn{
+    display:none;
+    position:static;
+    flex-shrink:0;
+  }
+  .beat-card.highlighted .track-play-btn,
+  .beat-card.focused .track-play-btn{
+    display:flex;
+  }
+  .beat-card.highlighted .cover-wrap .play-btn,
+  .beat-card.focused .cover-wrap .play-btn{
+    display:none;
+  }
+  .player-track{flex:1;display:flex;flex-direction:column;gap:7px;}
   .progress-wrap{
     position:relative;
     height:6px;
@@ -393,8 +412,20 @@
   .beat-card.focused .play-btn:active{
     transform:translate(-50%,-50%) scale(0.92);
   }
+  .beat-card.highlighted .track-play-btn,
+  .beat-card.focused .track-play-btn{
+    width:44px;height:44px;
+    top:auto;left:auto;
+    transform:none;
+  }
+  .beat-card.highlighted .track-play-btn:active,
+  .beat-card.focused .track-play-btn:active{
+    transform:scale(0.92);
+  }
   .beat-card.highlighted .play-btn svg,
   .beat-card.focused .play-btn svg{width:22px;height:22px;}
+  .beat-card.highlighted .track-play-btn svg,
+  .beat-card.focused .track-play-btn svg{width:17px;height:17px;}
   .beat-card.highlighted .beat-tags,
   .beat-card.focused .beat-tags{justify-content:center;}
   .beat-card.highlighted .beat-head,
@@ -532,11 +563,11 @@
   .contact-section{
     max-width:640px;
     margin:8px auto 0;
-    padding:14px 18px;
+    padding:10px 18px;
     text-align:center;
     background:linear-gradient(180deg, #141414, #0d0d0d);
-    border-top:1px solid var(--border);
-    border-bottom:1px solid var(--border);
+    border-top:1px solid rgba(255,255,255,0.06);
+    border-bottom:1px solid rgba(255,255,255,0.06);
   }
   .contact-title{
     font-size:14px;
@@ -780,6 +811,10 @@
             </div>
           </div>
           <div class="player-track-row">
+            <button class="play-btn track-play-btn" aria-label="Play">
+              <svg class="icon-play" viewBox="0 0 24 24" fill="#000"><path d="M8 5v14l11-7z"/></svg>
+              <svg class="icon-pause" viewBox="0 0 24 24" fill="#000" style="display:none"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+            </button>
             <div class="player-track">
               <div class="progress-wrap">
                 <div class="progress-fill"></div>
@@ -801,9 +836,7 @@
           </div>
         `;
         const audioEl = card.querySelector('audio');
-        const playBtn = card.querySelector('.play-btn');
-        const iconPlay = card.querySelector('.icon-play');
-        const iconPause = card.querySelector('.icon-pause');
+        const playBtns = card.querySelectorAll('.play-btn');
         const progressWrap = card.querySelector('.progress-wrap');
         const progressFill = card.querySelector('.progress-fill');
         const progressHandle = card.querySelector('.progress-handle');
@@ -817,20 +850,26 @@
           return `${m}:${s}`;
         }
 
-        playBtn.addEventListener('click', ()=>{
-          // Pause all other playing audios on the page
-          document.querySelectorAll('audio').forEach(a=>{ if(a !== audioEl) a.pause(); });
-          if(audioEl.paused){ audioEl.play(); } else { audioEl.pause(); }
+        playBtns.forEach(btn=>{
+          btn.addEventListener('click', ()=>{
+            // Pause all other playing audios on the page
+            document.querySelectorAll('audio').forEach(a=>{ if(a !== audioEl) a.pause(); });
+            if(audioEl.paused){ audioEl.play(); } else { audioEl.pause(); }
+          });
         });
         audioEl.addEventListener('play', ()=>{
-          iconPlay.style.display='none';
-          iconPause.style.display='block';
-          playBtn.classList.add('is-playing');
+          playBtns.forEach(btn=>{
+            btn.querySelector('.icon-play').style.display='none';
+            btn.querySelector('.icon-pause').style.display='block';
+            btn.classList.add('is-playing');
+          });
         });
         audioEl.addEventListener('pause', ()=>{
-          iconPlay.style.display='block';
-          iconPause.style.display='none';
-          playBtn.classList.remove('is-playing');
+          playBtns.forEach(btn=>{
+            btn.querySelector('.icon-play').style.display='block';
+            btn.querySelector('.icon-pause').style.display='none';
+            btn.classList.remove('is-playing');
+          });
         });
         audioEl.addEventListener('loadedmetadata', ()=>{
           timeTotal.textContent = formatTime(audioEl.duration);
@@ -842,9 +881,11 @@
           timeCurrent.textContent = formatTime(audioEl.currentTime);
         });
         audioEl.addEventListener('ended', ()=>{
-          iconPlay.style.display='block';
-          iconPause.style.display='none';
-          playBtn.classList.remove('is-playing');
+          playBtns.forEach(btn=>{
+            btn.querySelector('.icon-play').style.display='block';
+            btn.querySelector('.icon-pause').style.display='none';
+            btn.classList.remove('is-playing');
+          });
         });
         progressWrap.addEventListener('click', (e)=>{
           const rect = progressWrap.getBoundingClientRect();
