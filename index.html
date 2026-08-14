@@ -125,10 +125,10 @@
     50%{box-shadow:0 8px 34px rgba(255,140,26,0.55);}
   }
   .beat-card.dimmed{
-    opacity:0.9;
-    padding:8px 10px;
-    margin-bottom:6px;
-    border-radius:12px;
+    opacity:0.92;
+    padding:6px 8px;
+    margin-bottom:5px;
+    border-radius:10px;
   }
   .highlight-banner{
     display:inline-flex;
@@ -181,7 +181,6 @@
     margin-bottom:8px;
   }
   .beat-producer svg{width:12px;height:12px;flex-shrink:0;}
-  .beat-card.dimmed .beat-producer{font-size:10px;margin-bottom:3px;}
   .beat-actions{
     display:flex;
     align-items:center;
@@ -303,39 +302,67 @@
   .mini-footer{
     display:none;
     align-items:center;
-    justify-content:space-between;
-    gap:8px;
+    justify-content:flex-end;
     margin-top:8px;
   }
-  .mini-footer .price{font-size:15px;font-weight:800;color:var(--orange);}
-  .mini-footer .buy-btn{
-    width:auto;padding:7px 16px;font-size:11.5px;
+  .cart-buy-btn{
+    width:auto;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:8px 16px;
+    font-size:13px;
+    font-weight:800;
+    border-radius:10px;
+    border:none;
+    cursor:pointer;
+    background:linear-gradient(135deg, #7c3aed, #6d28d9);
+    color:#fff;
+    box-shadow:0 2px 8px rgba(124,58,237,0.35);
   }
+  .cart-buy-btn svg{width:15px;height:15px;flex-shrink:0;}
+  .cart-buy-btn:active{transform:scale(0.96);}
   /* Compact list-row style for non-featured beats */
   .beat-card.dimmed .card-top-row{
-    margin-bottom:4px;
+    margin-bottom:2px;
   }
   .beat-card.dimmed .exclusive-badge{
-    font-size:8px;
-    padding:3px 7px;
+    font-size:7px;
+    padding:2px 6px;
   }
   .beat-card.dimmed .beat-head{
     margin-bottom:0;
-    gap:10px;
+    gap:8px;
   }
   .beat-card.dimmed .cover-wrap,
   .beat-card.dimmed .beat-cover,
   .beat-card.dimmed .beat-cover-placeholder{
-    width:52px;height:52px;border-radius:9px;
+    width:42px;height:42px;border-radius:8px;
   }
-  .beat-card.dimmed .beat-cover-placeholder{font-size:18px;}
-  .beat-card.dimmed .play-btn{width:22px;height:22px;bottom:2px;right:2px;}
-  .beat-card.dimmed .play-btn svg{width:9px;height:9px;}
-  .beat-card.dimmed .beat-title{font-size:13.5px;margin-bottom:2px;}
+  .beat-card.dimmed .beat-cover-placeholder{font-size:15px;}
+  .beat-card.dimmed .play-btn{width:18px;height:18px;bottom:1px;right:1px;}
+  .beat-card.dimmed .play-btn svg{width:7px;height:7px;}
+  .beat-card.dimmed .beat-title{font-size:12.5px;margin-bottom:1px;}
+  .beat-card.dimmed .beat-producer{font-size:9px;margin-bottom:0;}
+  .beat-card.dimmed .beat-producer svg{width:9px;height:9px;}
   .beat-card.dimmed .beat-tags{display:none;}
+  .dimmed-genre{display:none;}
+  .beat-card.dimmed .dimmed-genre{
+    display:block;
+    font-size:10px;
+    color:var(--muted);
+    background:#1e1e1e;
+    border:1px solid var(--border);
+    padding:2px 8px;
+    border-radius:10px;
+    width:fit-content;
+    margin-top:2px;
+  }
   .beat-card.dimmed .player-track-row{display:none;}
   .beat-card.dimmed .beat-footer{display:none;}
-  .beat-card.dimmed .mini-footer{display:flex;margin-top:4px;}
+  .beat-card.dimmed .mini-footer{display:flex;margin-top:2px;}
+  .beat-card.dimmed .cart-buy-btn{padding:5px 12px;font-size:11px;gap:4px;}
+  .beat-card.dimmed .cart-buy-btn svg{width:12px;height:12px;}
   /* Hero style for the featured (highlighted / focused) beat */
   .beat-card.highlighted .beat-head,
   .beat-card.focused .beat-head{
@@ -720,6 +747,7 @@
                 Prod. by Shri Beatz
                 <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#3ea6ff"/><path d="M8 12.5l2.5 2.5L16 9.5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </div>
+              ${beat.genre ? `<div class="dimmed-genre">${beat.genre}</div>` : ''}
               <div class="beat-tags">
                 <span class="beat-tag play-count">🎧 ${beat.plays||0}</span>
                 ${beat.genre ? `<span class="beat-tag">${beat.genre}</span>` : ''}
@@ -739,8 +767,10 @@
                 ${beat.key ? `<div class="beat-detail-row"><span class="label">Key</span><span class="value">${beat.key}</span></div>` : ''}
               </div>
               <div class="mini-footer">
-                <div class="price">₹${beat.price}</div>
-                <button class="buy-btn" onclick='openModal("${id}", ${JSON.stringify(beat.name)}, ${beat.price})'>Buy Now</button>
+                <button class="cart-buy-btn" onclick='openModal("${id}", ${JSON.stringify(beat.name)}, ${beat.price})'>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                  ₹${beat.price}
+                </button>
               </div>
             </div>
           </div>
