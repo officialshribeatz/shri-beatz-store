@@ -296,7 +296,7 @@
   .beat-cover.large,
   .beat-cover-placeholder.large{
     width:100%;
-    max-width:260px;
+    max-width:190px;
     aspect-ratio:1/1;
     height:auto;
     border-radius:18px;
@@ -575,6 +575,7 @@
   }
   const urlParams = new URLSearchParams(window.location.search);
   window.__highlightSlug = slugify(urlParams.get('beat'));
+  window.__originalLinkSlug = window.__highlightSlug; // never changes after this — controls the banner only
 
   function renderBeats(data, forceRebuild){
     if(!data){
@@ -582,10 +583,12 @@
       renderedIds = new Set();
       return;
     }
-    // highlightSlug drives everything about the "featured" beat — banner, glow, large
-    // cover, and top position. It starts from the ?beat=... link, and fully transfers
-    // to whichever beat the visitor clicks on afterwards.
+    // highlightSlug drives sort order + hero (large cover/glow) styling — it starts from
+    // the ?beat=... link and updates when the visitor clicks another beat.
+    // originalLinkSlug never changes — it alone controls the "this is the beat you're
+    // looking for" banner, so that always stays on the beat the link pointed to.
     const highlightSlug = window.__highlightSlug;
+    const originalLinkSlug = window.__originalLinkSlug;
 
     // Sort by manual "order" field first (lower = shown first). Beats without an order
     // fall back to newest-first, and always appear after ordered ones.
@@ -617,6 +620,7 @@
         const card = document.createElement('div');
         card.className = 'beat-card';
         const isHighlighted = highlightSlug && slugify(beat.name) === highlightSlug;
+        const isOriginalLink = originalLinkSlug && slugify(beat.name) === originalLinkSlug;
         if(isHighlighted){
           card.classList.add('highlighted');
         } else if(highlightSlug){
@@ -627,7 +631,7 @@
         card.dataset.search = `${beat.name||''} ${beat.genre||''} ${beat.key||''}`.toLowerCase();
         card.innerHTML = `
           <div class="card-top-row">
-            ${isHighlighted ? `<div class="highlight-banner">👉 This is the beat you're looking for</div>` : `<div></div>`}
+            ${isOriginalLink ? `<div class="highlight-banner">👉 This is the beat you're looking for</div>` : `<div></div>`}
             <div class="exclusive-badge">Exclusive</div>
           </div>
           <div class="beat-head">
