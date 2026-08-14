@@ -210,6 +210,10 @@
         <input type="text" id="beatKey" placeholder="e.g. C Minor">
       </div>
       <div class="field">
+        <label>BPM (optional)</label>
+        <input type="number" id="beatBpm" placeholder="e.g. 140">
+      </div>
+      <div class="field">
         <label>Price (₹)</label>
         <input type="number" id="beatPrice" placeholder="50">
       </div>
@@ -276,6 +280,8 @@
     const name = document.getElementById('beatName').value.trim();
     const genre = document.getElementById('beatGenre').value.trim();
     const key = document.getElementById('beatKey').value.trim();
+    const bpmVal = document.getElementById('beatBpm').value.trim();
+    const bpm = bpmVal ? parseInt(bpmVal) : null;
     const price = parseInt(document.getElementById('beatPrice').value);
     const file = document.getElementById('beatFile').value.trim();
     const cover = document.getElementById('beatCover').value.trim();
@@ -284,16 +290,19 @@
       return;
     }
     const beatRef = push(ref(db, 'beats'));
-    set(beatRef, {
+    const beatData = {
       name, genre, key, price, file, cover,
       plays: 0,
       order: window.__nextOrder != null ? window.__nextOrder : Date.now(),
       createdAt: Date.now()
-    }).then(()=>{
+    };
+    if(bpm) beatData.bpm = bpm;
+    set(beatRef, beatData).then(()=>{
       document.getElementById('addMsg').textContent = '✅ Beat added!';
       document.getElementById('beatName').value='';
       document.getElementById('beatGenre').value='';
       document.getElementById('beatKey').value='';
+      document.getElementById('beatBpm').value='';
       document.getElementById('beatPrice').value='';
       document.getElementById('beatFile').value='';
       document.getElementById('beatCover').value='';
@@ -357,6 +366,10 @@
                 <input type="text" id="key-${id}" value="${beat.key||''}">
               </div>
               <div>
+                <label>BPM</label>
+                <input type="number" id="bpm-${id}" value="${beat.bpm||''}">
+              </div>
+              <div>
                 <label>Cover File</label>
                 <input type="text" id="cover-${id}" value="${beat.cover||''}">
               </div>
@@ -392,12 +405,14 @@
     const name = document.getElementById('name-'+id).value.trim();
     const genre = document.getElementById('genre-'+id).value.trim();
     const key = document.getElementById('key-'+id).value.trim();
+    const bpmVal = document.getElementById('bpm-'+id).value.trim();
     const cover = document.getElementById('cover-'+id).value.trim();
     const priceVal = document.getElementById('price-'+id).value;
     const updates = {};
     if(name) updates.name = name;
     if(genre) updates.genre = genre;
     if(key) updates.key = key;
+    if(bpmVal) updates.bpm = parseInt(bpmVal);
     if(cover) updates.cover = cover;
     if(priceVal && parseInt(priceVal) > 0) updates.price = parseInt(priceVal);
     if(Object.keys(updates).length === 0){
