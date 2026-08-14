@@ -66,9 +66,14 @@
     border-radius:20px;
     letter-spacing:0.2px;
   }
+  .card-top-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:10px;
+    margin-bottom:14px;
+  }
   .exclusive-badge{
-    position:absolute;
-    top:14px;right:14px;
     background:linear-gradient(135deg, #ff8c1a, #ff6b1a);
     color:#000;
     font-size:9px;
@@ -78,6 +83,8 @@
     border-radius:20px;
     box-shadow:0 2px 8px rgba(255,140,26,0.4);
     text-transform:uppercase;
+    white-space:nowrap;
+    flex-shrink:0;
   }
   .urgency-line{
     font-size:11px;
@@ -116,23 +123,35 @@
     50%{box-shadow:0 8px 34px rgba(255,140,26,0.55);}
   }
   .beat-card.dimmed{
-    opacity:0.55;
+    opacity:0.65;
+    padding:14px 16px;
   }
-  .beat-card.expanded{
-    border:1.5px solid rgba(255,140,26,0.5);
-    box-shadow:0 10px 30px rgba(255,140,26,0.2);
-    transform:scale(1.02);
+  .beat-card.dimmed .beat-cover,
+  .beat-card.dimmed .beat-cover-placeholder{
+    width:56px;height:56px;border-radius:10px;
   }
-  .beat-card.expanded .beat-cover,
-  .beat-card.expanded .beat-cover-placeholder{
-    width:110px;height:110px;border-radius:16px;
+  .beat-card.dimmed .beat-cover-placeholder{
+    font-size:20px;
   }
-  .beat-card.expanded .beat-cover-placeholder{
-    font-size:34px;
+  .beat-card.dimmed .beat-title{
+    font-size:14.5px;
+    margin-bottom:5px;
   }
-  .beat-card.expanded .beat-title{
-    font-size:19px;
+  .beat-card.dimmed .player{
+    padding:8px 12px;
+    margin-bottom:12px;
   }
+  .beat-card.dimmed .play-btn{
+    width:36px;height:36px;
+  }
+  .beat-card.dimmed .price{
+    font-size:15px;
+  }
+  .beat-card.dimmed .buy-btn{
+    padding:8px 18px;
+    font-size:12px;
+  }
+  .highlight-banner{
     display:inline-flex;
     align-items:center;
     gap:6px;
@@ -142,14 +161,7 @@
     font-weight:800;
     padding:6px 12px;
     border-radius:20px;
-    margin-bottom:14px;
     letter-spacing:0.2px;
-  }
-  .beat-cover.large{
-    width:110px;height:110px;border-radius:16px;
-  }
-  .beat-cover-placeholder.large{
-    width:110px;height:110px;border-radius:16px;font-size:34px;
   }
   .beat-head{
     display:flex;
@@ -166,6 +178,12 @@
     background:linear-gradient(135deg,#2a2a2a,#151515);
     display:flex;align-items:center;justify-content:center;
     font-size:26px;border:1px solid var(--border);
+  }
+  .beat-cover.large{
+    width:110px;height:110px;border-radius:16px;
+  }
+  .beat-cover-placeholder.large{
+    width:110px;height:110px;border-radius:16px;font-size:34px;
   }
   .beat-info{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;}
   .beat-title{
@@ -575,8 +593,10 @@
         card.dataset.beatId = id;
         card.dataset.search = `${beat.name||''} ${beat.genre||''} ${beat.key||''}`.toLowerCase();
         card.innerHTML = `
-          <div class="exclusive-badge">Exclusive</div>
-          ${isHighlighted ? `<div class="highlight-banner">👉 This is the beat you're looking for</div>` : ''}
+          <div class="card-top-row">
+            ${isHighlighted ? `<div class="highlight-banner">👉 This is the beat you're looking for</div>` : `<div></div>`}
+            <div class="exclusive-badge">Exclusive</div>
+          </div>
           <div class="beat-head">
             ${beat.cover ? `<img class="beat-cover${isHighlighted ? ' large' : ''}" src="covers/${beat.cover}" onerror="this.outerHTML='<div class=&quot;beat-cover-placeholder${isHighlighted ? ' large' : ''}&quot;>🎵</div>'">` : `<div class="beat-cover-placeholder${isHighlighted ? ' large' : ''}">🎵</div>`}
             <div class="beat-info">
@@ -680,20 +700,6 @@
         });
         audioEl.addEventListener('pause', ()=>{
           if(playTimer){ clearTimeout(playTimer); playTimer=null; }
-        });
-
-        // Clicking anywhere on the card (except play/buy controls) expands it (bigger
-        // cover + title) and scrolls it into view. Only one card is expanded at a time.
-        // This does NOT touch the "this is the beat you're looking for" banner — that
-        // stays fixed to whichever beat the visitor's link (?beat=...) pointed to.
-        card.addEventListener('click', (e)=>{
-          if(e.target.closest('.play-btn') || e.target.closest('.buy-btn') || e.target.closest('.progress-wrap')) return;
-          const alreadyExpanded = card.classList.contains('expanded');
-          container.querySelectorAll('.beat-card.expanded').forEach(c=>c.classList.remove('expanded'));
-          if(!alreadyExpanded){
-            card.classList.add('expanded');
-          }
-          card.scrollIntoView({ behavior: 'smooth', block: 'center' });
         });
 
         container.appendChild(card);
