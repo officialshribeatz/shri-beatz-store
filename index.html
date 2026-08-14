@@ -202,6 +202,21 @@
   .like-btn.liked svg path{fill:#ff4d4d;stroke:#ff4d4d;}
   .like-btn:active svg{transform:scale(1.2);}
   .beat-card.dimmed .beat-actions{display:none;}
+  .beat-details{
+    display:none;
+    margin-top:14px;
+    padding-top:14px;
+    border-top:1px solid var(--border);
+  }
+  .beat-card.highlighted .beat-details{display:block;}
+  .beat-detail-row{
+    display:flex;
+    justify-content:space-between;
+    padding:6px 0;
+    font-size:13px;
+  }
+  .beat-detail-row .label{color:var(--muted);}
+  .beat-detail-row .value{color:var(--text);font-weight:600;}
   .beat-tags{
     display:flex;
     flex-wrap:wrap;
@@ -330,10 +345,10 @@
   .beat-cover.large,
   .beat-cover-placeholder.large{
     width:100%;
-    max-width:190px;
+    max-width:150px;
     aspect-ratio:1/1;
     height:auto;
-    border-radius:18px;
+    border-radius:16px;
   }
   .beat-card.highlighted .play-btn,
   .beat-card.focused .play-btn{
@@ -693,6 +708,12 @@
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7.5-4.6-10-9.1C0.3 8.4 2 5 5.4 5c2 0 3.4 1.1 4.1 2.2C10.2 6.1 11.6 5 13.6 5 17 5 18.7 8.4 17 12c-2.5 4.5-5 9-5 9z"/></svg>
                   <span class="like-count">${beat.likes||0}</span>
                 </button>
+              </div>
+              <div class="beat-details">
+                ${beat.createdAt ? `<div class="beat-detail-row"><span class="label">Published</span><span class="value">${new Date(beat.createdAt).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' })}</span></div>` : ''}
+                <div class="beat-detail-row"><span class="label">Plays</span><span class="value">${beat.plays||0}</span></div>
+                ${beat.bpm ? `<div class="beat-detail-row"><span class="label">BPM</span><span class="value">${beat.bpm}</span></div>` : ''}
+                ${beat.key ? `<div class="beat-detail-row"><span class="label">Key</span><span class="value">${beat.key}</span></div>` : ''}
               </div>
               <div class="mini-footer">
                 <div class="price">₹${beat.price}</div>
