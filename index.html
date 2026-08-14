@@ -165,9 +165,43 @@
     font-size:17px;
     font-weight:700;
     letter-spacing:0.2px;
-    margin-bottom:8px;
+    margin-bottom:4px;
     line-height:1.3;
   }
+  .beat-producer{
+    display:flex;
+    align-items:center;
+    gap:4px;
+    font-size:11.5px;
+    color:var(--muted);
+    margin-bottom:8px;
+  }
+  .beat-producer svg{width:12px;height:12px;flex-shrink:0;}
+  .beat-card.dimmed .beat-producer{display:none;}
+  .beat-actions{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    margin-top:10px;
+  }
+  .like-btn{
+    display:flex;
+    align-items:center;
+    gap:5px;
+    background:none;
+    border:none;
+    box-shadow:none;
+    width:auto;
+    padding:0;
+    color:var(--muted);
+    font-size:12px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .like-btn svg{width:17px;height:17px;transition:transform 0.15s ease;}
+  .like-btn.liked svg path{fill:#ff4d4d;stroke:#ff4d4d;}
+  .like-btn:active svg{transform:scale(1.2);}
+  .beat-card.dimmed .beat-actions{display:none;}
   .beat-tags{
     display:flex;
     flex-wrap:wrap;
@@ -644,10 +678,21 @@
             </div>
             <div class="beat-info">
               <div class="beat-title">${beat.name}</div>
+              <div class="beat-producer">
+                Prod. by Shri Beatz
+                <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#3ea6ff"/><path d="M8 12.5l2.5 2.5L16 9.5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
               <div class="beat-tags">
                 <span class="beat-tag play-count">🎧 ${beat.plays||0}</span>
                 ${beat.genre ? `<span class="beat-tag">${beat.genre}</span>` : ''}
                 ${beat.key ? `<span class="beat-tag">${beat.key}</span>` : ''}
+                ${beat.bpm ? `<span class="beat-tag">${beat.bpm} BPM</span>` : ''}
+              </div>
+              <div class="beat-actions">
+                <button class="like-btn" aria-label="Like">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7.5-4.6-10-9.1C0.3 8.4 2 5 5.4 5c2 0 3.4 1.1 4.1 2.2C10.2 6.1 11.6 5 13.6 5 17 5 18.7 8.4 17 12c-2.5 4.5-5 9-5 9z"/></svg>
+                  <span class="like-count">${beat.likes||0}</span>
+                </button>
               </div>
               <div class="mini-footer">
                 <div class="price">₹${beat.price}</div>
@@ -745,6 +790,27 @@
           if(playTimer){ clearTimeout(playTimer); playTimer=null; }
         });
 
+        const likeBtn = card.querySelector('.like-btn');
+        const likeCountEl = card.querySelector('.like-count');
+        const likedKey = 'shribeatz_liked_' + id;
+        if(localStorage.getItem(likedKey)){
+          likeBtn.classList.add('liked');
+        }
+        likeBtn.addEventListener('click', (e)=>{
+          e.stopPropagation();
+          const alreadyLiked = !!localStorage.getItem(likedKey);
+          const likeRef = ref(db, 'beats/'+id+'/likes');
+          if(alreadyLiked){
+            localStorage.removeItem(likedKey);
+            likeBtn.classList.remove('liked');
+            runTransaction(likeRef, (val)=> Math.max((val||0)-1, 0));
+          } else {
+            localStorage.setItem(likedKey, '1');
+            likeBtn.classList.add('liked');
+            runTransaction(likeRef, (val)=> (val||0)+1);
+          }
+        });
+
         // Clicking a beat (except play/buy controls) makes it the new featured beat —
         // it moves to the top of the list with the full hero layout, banner included.
         card.addEventListener('click', (e)=>{
@@ -773,6 +839,8 @@
         if(card){
           const countEl = card.querySelector('.play-count');
           if(countEl) countEl.textContent = `🎧 ${beat.plays||0}`;
+          const likeCountEl = card.querySelector('.like-count');
+          if(likeCountEl) likeCountEl.textContent = beat.likes||0;
         }
       });
     }
