@@ -431,13 +431,40 @@
     return (str||'').toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
   }
 
+  function copyToClipboard(text){
+    return new Promise((resolve, reject)=>{
+      if(navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext){
+        navigator.clipboard.writeText(text).then(resolve).catch(()=>{
+          fallbackCopy(text) ? resolve() : reject();
+        });
+      } else {
+        fallbackCopy(text) ? resolve() : reject();
+      }
+    });
+  }
+
+  function fallbackCopy(text){
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    ta.style.top = '0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch(e){ ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  }
+
   window.copyBeatLink = function(id, name){
     const slug = slugify(name);
     const link = SITE_BASE_URL + '?beat=' + slug;
-    navigator.clipboard.writeText(link).then(()=>{
-      alert('✅ Link copied:\n' + link);
+    copyToClipboard(link).then(()=>{
+      alert('✅ Link copied! You can now paste it directly.');
     }).catch(()=>{
-      prompt('Copy this link manually:', link);
+      prompt('Copy this link manually (tap, select all, copy):', link);
     });
   }
 
