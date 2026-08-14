@@ -100,11 +100,12 @@
     box-shadow:0 8px 24px rgba(0,0,0,0.4);
     position:relative;
     transition:opacity 0.2s;
+    animation:slideInTop 0.4s ease;
   }
   .beat-card.highlighted{
     border:1.5px solid var(--orange);
     box-shadow:0 8px 28px rgba(255,140,26,0.25);
-    animation:highlightGlow 2s ease-in-out infinite, slideInTop 0.4s ease;
+    animation:highlightGlow 2s ease-in-out infinite;
   }
   @keyframes slideInTop{
     from{ transform:translateY(-14px); opacity:0; }
@@ -509,7 +510,8 @@
     return (str||'').toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
   }
   const urlParams = new URLSearchParams(window.location.search);
-  window.__highlightSlug = slugify(urlParams.get('beat'));
+  window.__urlHighlightSlug = slugify(urlParams.get('beat'));
+  window.__selectedSlug = window.__urlHighlightSlug;
 
   function renderBeats(data, forceRebuild){
     if(!data){
@@ -517,17 +519,18 @@
       renderedIds = new Set();
       return;
     }
-    // If the URL has ?beat=some-name, that beat is pushed to the very top
-    // so YouTube/Instagram links can point straight at one specific beat.
-    // Clicking any other beat card afterwards switches the highlight to it.
-    const highlightSlug = window.__highlightSlug;
+    // urlHighlightSlug (fixed, from the YouTube/Instagram link) controls the special
+    // "this is the beat you're looking for" banner + glow + large cover.
+    // selectedSlug (changes on click) only controls which beat sits at the top of the list.
+    const urlHighlightSlug = window.__urlHighlightSlug;
+    const selectedSlug = window.__selectedSlug;
 
     // Sort by manual "order" field first (lower = shown first). Beats without an order
     // fall back to newest-first, and always appear after ordered ones.
     const beats = Object.entries(data).sort((a,b)=>{
-      if(highlightSlug){
-        const aMatch = slugify(a[1].name) === highlightSlug;
-        const bMatch = slugify(b[1].name) === highlightSlug;
+      if(selectedSlug){
+        const aMatch = slugify(a[1].name) === selectedSlug;
+        const bMatch = slugify(b[1].name) === selectedSlug;
         if(aMatch && !bMatch) return -1;
         if(!aMatch && bMatch) return 1;
       }
@@ -551,10 +554,10 @@
       beats.forEach(([id, beat])=>{
         const card = document.createElement('div');
         card.className = 'beat-card';
-        const isHighlighted = highlightSlug && slugify(beat.name) === highlightSlug;
+        const isHighlighted = urlHighlightSlug && slugify(beat.name) === urlHighlightSlug;
         if(isHighlighted){
           card.classList.add('highlighted');
-        } else if(highlightSlug){
+        } else if(urlHighlightSlug){
           card.classList.add('dimmed');
         }
         card.dataset.beatId = id;
@@ -667,14 +670,14 @@
           if(playTimer){ clearTimeout(playTimer); playTimer=null; }
         });
 
-        // Clicking anywhere on the card (except play/buy controls) switches the highlight to it
+        // Clicking anywhere on the card (except play/buy controls) smoothly brings it to the top.
+        // This does NOT change the "this is the beat you're looking for" banner — that stays
+        // fixed to whichever beat the visitor's link (?beat=...) pointed to.
         card.addEventListener('click', (e)=>{
           if(e.target.closest('.play-btn') || e.target.closest('.buy-btn') || e.target.closest('.progress-wrap')) return;
           const clickedSlug = slugify(beat.name);
-          if(window.__highlightSlug === clickedSlug) return;
-          window.__highlightSlug = clickedSlug;
-          const newUrl = window.location.pathname + '?beat=' + encodeURIComponent(clickedSlug);
-          window.history.replaceState({}, '', newUrl);
+          if(window.__selectedSlug === clickedSlug) return;
+          window.__selectedSlug = clickedSlug;
           container.classList.add('fading');
           setTimeout(()=>{
             renderBeats(lastBeatsData, true);
