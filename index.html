@@ -104,6 +104,11 @@
   .beat-card.highlighted{
     border:1.5px solid var(--orange);
     box-shadow:0 8px 28px rgba(255,140,26,0.25);
+    animation:highlightGlow 2s ease-in-out infinite;
+  }
+  @keyframes highlightGlow{
+    0%,100%{box-shadow:0 8px 28px rgba(255,140,26,0.25);}
+    50%{box-shadow:0 8px 34px rgba(255,140,26,0.55);}
   }
   .beat-card.dimmed{
     opacity:0.55;
@@ -488,9 +493,15 @@
 
   const beatsRef = ref(db, 'beats');
   let renderedIds = new Set();
+  let lastBeatsData = null;
 
-  onValue(beatsRef, (snapshot) => {
-    const data = snapshot.val();
+  function slugify(str){
+    return (str||'').toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+  }
+  const urlParams = new URLSearchParams(window.location.search);
+  window.__highlightSlug = slugify(urlParams.get('beat'));
+
+  function renderBeats(data, forceRebuild){
     if(!data){
       container.innerHTML = '<div class="empty">No beats available right now. Check back soon!</div>';
       renderedIds = new Set();
@@ -498,11 +509,8 @@
     }
     // If the URL has ?beat=some-name, that beat is pushed to the very top
     // so YouTube/Instagram links can point straight at one specific beat.
-    function slugify(str){
-      return (str||'').toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
-    }
-    const urlParams = new URLSearchParams(window.location.search);
-    const highlightSlug = slugify(urlParams.get('beat'));
+    // Clicking any other beat card afterwards switches the highlight to it.
+    const highlightSlug = window.__highlightSlug;
 
     // Sort by manual "order" field first (lower = shown first). Beats without an order
     // fall back to newest-first, and always appear after ordered ones.
@@ -526,7 +534,7 @@
 
     // If the set of beats changed (added/removed) OR their order changed, do a full rebuild
     const orderChanged = beats.map(b=>b[0]).join(',') !== [...renderedIds].join(',');
-    const idsChanged = currentIds.size !== renderedIds.size || [...currentIds].some(id=>!renderedIds.has(id)) || orderChanged;
+    const idsChanged = forceRebuild || currentIds.size !== renderedIds.size || [...currentIds].some(id=>!renderedIds.has(id)) || orderChanged;
 
     if(idsChanged){
       container.innerHTML = '';
@@ -648,6 +656,19 @@
         audioEl.addEventListener('pause', ()=>{
           if(playTimer){ clearTimeout(playTimer); playTimer=null; }
         });
+
+        // Clicking anywhere on the card (except play/buy controls) switches the highlight to it
+        card.addEventListener('click', (e)=>{
+          if(e.target.closest('.play-btn') || e.target.closest('.buy-btn') || e.target.closest('.progress-wrap')) return;
+          const clickedSlug = slugify(beat.name);
+          if(window.__highlightSlug === clickedSlug) return;
+          window.__highlightSlug = clickedSlug;
+          const newUrl = window.location.pathname + '?beat=' + encodeURIComponent(clickedSlug);
+          window.history.replaceState({}, '', newUrl);
+          renderBeats(lastBeatsData, true);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
         container.appendChild(card);
       });
       renderedIds = currentIds;
@@ -662,6 +683,12 @@
         }
       });
     }
+  }
+
+  onValue(beatsRef, (snapshot) => {
+    const data = snapshot.val();
+    lastBeatsData = data;
+    renderBeats(data, false);
   });
 
   function applySearchFilter(){
