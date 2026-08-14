@@ -325,9 +325,7 @@
   .beat-card.dimmed .play-btn{width:22px;height:22px;bottom:2px;right:2px;}
   .beat-card.dimmed .play-btn svg{width:9px;height:9px;}
   .beat-card.dimmed .beat-title{font-size:13.5px;margin-bottom:2px;}
-  .beat-card.dimmed .beat-tags{gap:4px;}
-  .beat-card.dimmed .beat-tag{font-size:9px;padding:2px 6px;}
-  .beat-card.dimmed .play-count{display:none;}
+  .beat-card.dimmed .beat-tags{display:none;}
   .beat-card.dimmed .player-track-row{display:none;}
   .beat-card.dimmed .beat-footer{display:none;}
   .beat-card.dimmed .mini-footer{display:flex;margin-top:4px;}
@@ -690,7 +688,7 @@
         const isOriginalLink = originalLinkSlug && slugify(beat.name) === originalLinkSlug;
         if(isHighlighted){
           card.classList.add('highlighted');
-        } else if(highlightSlug){
+        } else {
           card.classList.add('dimmed');
         }
         card.dataset.isOriginal = isHighlighted ? '1' : '0';
