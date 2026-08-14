@@ -362,34 +362,44 @@
   .beat-card.dimmed{
     padding-top:22px;
   }
+  .beat-card.dimmed .cover-wrap .play-btn{
+    display:none;
+  }
+  .list-play-btn{
+    display:none;
+  }
+  .beat-card.dimmed .list-play-btn{
+    display:flex;
+    position:static;
+    width:34px;height:34px;
+    flex-shrink:0;
+  }
+  .beat-card.dimmed .list-play-btn svg{width:13px;height:13px;}
   .beat-card.dimmed .beat-head{
     margin-bottom:0;
     gap:8px;
+    align-items:center;
   }
   .beat-card.dimmed .cover-wrap,
   .beat-card.dimmed .beat-cover,
   .beat-card.dimmed .beat-cover-placeholder{
-    width:42px;height:42px;border-radius:8px;
+    width:38px;height:38px;border-radius:7px;
   }
-  .beat-card.dimmed .beat-cover-placeholder{font-size:15px;}
-  .beat-card.dimmed .play-btn{width:18px;height:18px;bottom:1px;right:1px;}
-  .beat-card.dimmed .play-btn svg{width:7px;height:7px;}
+  .beat-card.dimmed .beat-cover-placeholder{font-size:14px;}
   .beat-card.dimmed .beat-title{font-size:12.5px;margin-bottom:1px;}
-  .beat-card.dimmed .beat-producer{font-size:9px;margin-bottom:0;}
+  .beat-card.dimmed .beat-producer{font-size:9px;margin-bottom:2px;}
   .beat-card.dimmed .beat-producer svg{width:9px;height:9px;}
-  .beat-card.dimmed .beat-tags{display:none;}
-  .dimmed-genre{display:none;}
-  .beat-card.dimmed .dimmed-genre{
-    display:block;
-    font-size:10px;
-    color:var(--muted);
-    background:#1e1e1e;
-    border:1px solid var(--border);
-    padding:2px 8px;
-    border-radius:10px;
-    width:fit-content;
-    margin-top:2px;
+  .beat-card.dimmed .beat-tags{
+    display:flex;
+    gap:4px;
   }
+  .beat-card.dimmed .beat-tags .play-count{display:none;}
+  .beat-card.dimmed .beat-tag{
+    font-size:8.5px;
+    padding:2px 7px;
+    background:#1c1c1c;
+  }
+  .dimmed-genre{display:none;}
   .beat-card.dimmed .player-track-row{display:none;}
   .beat-card.dimmed .beat-footer{display:none;}
   .beat-card.dimmed .mini-footer{
@@ -792,6 +802,10 @@
             <div class="exclusive-badge">Exclusive</div>
           </div>
           <div class="beat-head">
+            <button class="play-btn list-play-btn" aria-label="Play">
+              <svg class="icon-play" viewBox="0 0 24 24" fill="#000"><path d="M8 5v14l11-7z"/></svg>
+              <svg class="icon-pause" viewBox="0 0 24 24" fill="#000" style="display:none"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+            </button>
             <div class="cover-wrap">
               ${beat.cover ? `<img class="beat-cover${isHighlighted ? ' large' : ''}" src="covers/${beat.cover}" onerror="this.outerHTML='<div class=&quot;beat-cover-placeholder${isHighlighted ? ' large' : ''}&quot;>🎵</div>'">` : `<div class="beat-cover-placeholder${isHighlighted ? ' large' : ''}">🎵</div>`}
               <button class="play-btn" aria-label="Play">
@@ -801,6 +815,7 @@
             </div>
             <div class="beat-info">
               <div class="beat-title">${beat.name}</div>
+
               <div class="beat-producer">
                 Prod. by Shri Beatz
                 <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#3ea6ff"/><path d="M8 12.5l2.5 2.5L16 9.5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
