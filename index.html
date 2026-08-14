@@ -370,9 +370,9 @@
   }
   .beat-card.highlighted .cover-wrap,
   .beat-card.focused .cover-wrap{
-    width:100%;
-    display:flex;
-    justify-content:center;
+    width:190px;
+    max-width:100%;
+    margin:0 auto;
   }
   .beat-cover.large,
   .beat-cover-placeholder.large{
@@ -384,10 +384,17 @@
   }
   .beat-card.highlighted .play-btn,
   .beat-card.focused .play-btn{
-    width:48px;height:48px;bottom:12px;right:12px;
+    width:56px;height:56px;
+    top:50%;left:50%;
+    bottom:auto;right:auto;
+    transform:translate(-50%,-50%);
+  }
+  .beat-card.highlighted .play-btn:active,
+  .beat-card.focused .play-btn:active{
+    transform:translate(-50%,-50%) scale(0.92);
   }
   .beat-card.highlighted .play-btn svg,
-  .beat-card.focused .play-btn svg{width:18px;height:18px;}
+  .beat-card.focused .play-btn svg{width:22px;height:22px;}
   .beat-card.highlighted .beat-tags,
   .beat-card.focused .beat-tags{justify-content:center;}
   .beat-card.highlighted .beat-head,
