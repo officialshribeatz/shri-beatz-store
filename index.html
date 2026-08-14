@@ -510,8 +510,7 @@
     return (str||'').toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
   }
   const urlParams = new URLSearchParams(window.location.search);
-  window.__urlHighlightSlug = slugify(urlParams.get('beat'));
-  window.__selectedSlug = window.__urlHighlightSlug;
+  window.__highlightSlug = slugify(urlParams.get('beat'));
 
   function renderBeats(data, forceRebuild){
     if(!data){
@@ -519,18 +518,17 @@
       renderedIds = new Set();
       return;
     }
-    // urlHighlightSlug (fixed, from the YouTube/Instagram link) controls the special
-    // "this is the beat you're looking for" banner + glow + large cover.
-    // selectedSlug (changes on click) only controls which beat sits at the top of the list.
-    const urlHighlightSlug = window.__urlHighlightSlug;
-    const selectedSlug = window.__selectedSlug;
+    // highlightSlug drives everything about the "featured" beat — banner, glow, large
+    // cover, and top position. It starts from the ?beat=... link, and fully transfers
+    // to whichever beat the visitor clicks on afterwards.
+    const highlightSlug = window.__highlightSlug;
 
     // Sort by manual "order" field first (lower = shown first). Beats without an order
     // fall back to newest-first, and always appear after ordered ones.
     const beats = Object.entries(data).sort((a,b)=>{
-      if(selectedSlug){
-        const aMatch = slugify(a[1].name) === selectedSlug;
-        const bMatch = slugify(b[1].name) === selectedSlug;
+      if(highlightSlug){
+        const aMatch = slugify(a[1].name) === highlightSlug;
+        const bMatch = slugify(b[1].name) === highlightSlug;
         if(aMatch && !bMatch) return -1;
         if(!aMatch && bMatch) return 1;
       }
@@ -554,10 +552,10 @@
       beats.forEach(([id, beat])=>{
         const card = document.createElement('div');
         card.className = 'beat-card';
-        const isHighlighted = urlHighlightSlug && slugify(beat.name) === urlHighlightSlug;
+        const isHighlighted = highlightSlug && slugify(beat.name) === highlightSlug;
         if(isHighlighted){
           card.classList.add('highlighted');
-        } else if(urlHighlightSlug){
+        } else if(highlightSlug){
           card.classList.add('dimmed');
         }
         card.dataset.beatId = id;
@@ -670,20 +668,38 @@
           if(playTimer){ clearTimeout(playTimer); playTimer=null; }
         });
 
-        // Clicking anywhere on the card (except play/buy controls) smoothly brings it to the top.
-        // This does NOT change the "this is the beat you're looking for" banner — that stays
-        // fixed to whichever beat the visitor's link (?beat=...) pointed to.
+        // Clicking anywhere on the card (except play/buy controls) makes it the new
+        // featured/highlighted beat, right where it already sits in the list — no
+        // reordering — and smoothly scrolls it into view.
         card.addEventListener('click', (e)=>{
           if(e.target.closest('.play-btn') || e.target.closest('.buy-btn') || e.target.closest('.progress-wrap')) return;
           const clickedSlug = slugify(beat.name);
-          if(window.__selectedSlug === clickedSlug) return;
-          window.__selectedSlug = clickedSlug;
-          container.classList.add('fading');
-          setTimeout(()=>{
-            renderBeats(lastBeatsData, true);
-            container.classList.remove('fading');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }, 220);
+          if(window.__highlightSlug === clickedSlug) return;
+          window.__highlightSlug = clickedSlug;
+          const newUrl = window.location.pathname + '?beat=' + encodeURIComponent(clickedSlug);
+          window.history.replaceState({}, '', newUrl);
+
+          // Update highlight classes in place, without rebuilding/reordering the DOM
+          container.querySelectorAll('.beat-card').forEach(c=>{
+            c.classList.remove('highlighted','dimmed');
+            c.classList.add('dimmed');
+            const banner = c.querySelector('.highlight-banner');
+            if(banner) banner.remove();
+            const cover = c.querySelector('.beat-cover, .beat-cover-placeholder');
+            if(cover) cover.classList.remove('large');
+          });
+          card.classList.remove('dimmed');
+          card.classList.add('highlighted');
+          if(!card.querySelector('.highlight-banner')){
+            const banner = document.createElement('div');
+            banner.className = 'highlight-banner';
+            banner.textContent = "👉 This is the beat you're looking for";
+            card.querySelector('.exclusive-badge').insertAdjacentElement('afterend', banner);
+          }
+          const coverEl = card.querySelector('.beat-cover, .beat-cover-placeholder');
+          if(coverEl) coverEl.classList.add('large');
+
+          card.scrollIntoView({ behavior: 'smooth', block: 'center' });
         });
 
         container.appendChild(card);
