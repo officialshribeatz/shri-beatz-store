@@ -712,4 +712,468 @@
       </div>
       <div class="field">
         <label>Artist / Stage Name (optional)</label>
-     
+        <input type="text" id="buyerStageName" placeholder="Name to credit in the song">
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="buyerEmail" placeholder="you@example.com">
+      </div>
+      <div class="field">
+        <label>WhatsApp Number (optional)</label>
+        <input type="tel" id="buyerPhone" placeholder="10-digit number">
+      </div>
+      <div class="field">
+        <label>Country (optional)</label>
+        <input type="text" id="buyerCountry" placeholder="e.g. India">
+      </div>
+      <div class="field">
+        <label>State (optional)</label>
+        <input type="text" id="buyerState" placeholder="e.g. Maharashtra">
+      </div>
+      <div class="field">
+        <label>Town/City (optional)</label>
+        <input type="text" id="buyerCity" placeholder="e.g. Pune">
+      </div>
+      <div class="modal-actions">
+        <button class="cancel-btn" onclick="closeModal()">Cancel</button>
+        <button class="pay-btn" onclick="proceedToPay()">Pay ₹<span id="modalPrice"></span></button>
+      </div>
+      <div class="modal-legal">✅ 100% Exclusive • <a href="license.html" target="_blank">What you get →</a></div>
+    </div>
+    <div id="payStep" style="display:none">
+      <div class="success-box">
+        <h3 style="margin-bottom:14px">Scan &amp; Pay ₹<span id="upiAmount"></span></h3>
+        <div id="qrCodeBox" style="display:flex;justify-content:center;margin-bottom:14px"></div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:6px">or pay via UPI ID</div>
+        <div style="font-family:monospace;font-size:14px;background:#0f0f0f;border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:14px" id="upiIdDisplay"></div>
+        <a id="upiIntentBtn" href="#" class="whatsapp-support-btn" style="background:#2a1c1c;border-color:#4a2a2a;color:#ff9d4d">📱 Pay with GPay / PhonePe / Paytm</a>
+        <div class="order-summary">
+          <div class="order-row"><span>Beat</span><span id="payBeatName" class="order-value"></span></div>
+          <div class="order-row"><span>Order ID</span><span id="payOrderId" class="order-value mono"></span></div>
+        </div>
+        <div class="next-steps">
+          <div class="next-steps-title">After you pay</div>
+          <div class="next-step-item">✅ Tap the button below and send us your payment screenshot on WhatsApp</div>
+          <div class="next-step-item">🔍 We manually verify every payment before delivery</div>
+          <div class="next-step-item">📩 Once confirmed, WAV + Trackout stems are sent within 24 hours</div>
+        </div>
+        <a href="https://wa.me/919137471587" target="_blank" class="whatsapp-support-btn" id="waConfirmBtn">💬 Send Payment Screenshot on WhatsApp</a>
+        <div class="modal-actions">
+          <button class="pay-btn" style="flex:1" onclick="closeModal()">Done</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getDatabase, ref, onValue, push, set, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAZOYSy3s3HwkjhnwQzWPMzabky9LrjX8c",
+    authDomain: "shri-beatz-store.firebaseapp.com",
+    databaseURL: "https://shri-beatz-store-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "shri-beatz-store",
+    storageBucket: "shri-beatz-store.firebasestorage.app",
+    messagingSenderId: "1016496280094",
+    appId: "1:1016496280094:web:c4398a985f875d0dc7940f"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  let currentBeat = null;
+  const container = document.getElementById('beatsList');
+
+  const beatsRef = ref(db, 'beats');
+  let renderedIds = new Set();
+  let lastBeatsData = null;
+
+  function slugify(str){
+    return (str||'').toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+  }
+  const urlParams = new URLSearchParams(window.location.search);
+  window.__highlightSlug = slugify(urlParams.get('beat'));
+  window.__originalLinkSlug = window.__highlightSlug; // never changes after this — controls the banner only
+
+  function renderBeats(data, forceRebuild){
+    if(!data){
+      container.innerHTML = '<div class="empty">No beats available right now. Check back soon!</div>';
+      renderedIds = new Set();
+      return;
+    }
+    // highlightSlug drives sort order + hero (large cover/glow) styling — it starts from
+    // the ?beat=... link and updates when the visitor clicks another beat.
+    // originalLinkSlug never changes — it alone controls the "this is the beat you're
+    // looking for" banner, so that always stays on the beat the link pointed to.
+    const highlightSlug = window.__highlightSlug;
+    const originalLinkSlug = window.__originalLinkSlug;
+
+    // Sort by manual "order" field first (lower = shown first). Beats without an order
+    // fall back to newest-first, and always appear after ordered ones.
+    const beats = Object.entries(data).sort((a,b)=>{
+      if(highlightSlug){
+        const aMatch = slugify(a[1].name) === highlightSlug;
+        const bMatch = slugify(b[1].name) === highlightSlug;
+        if(aMatch && !bMatch) return -1;
+        if(!aMatch && bMatch) return 1;
+      }
+      const oa = a[1].order;
+      const ob = b[1].order;
+      const aHas = typeof oa === 'number';
+      const bHas = typeof ob === 'number';
+      if(aHas && bHas) return oa - ob;
+      if(aHas && !bHas) return -1;
+      if(!aHas && bHas) return 1;
+      return (b[1].createdAt||0)-(a[1].createdAt||0);
+    });
+    const currentIds = new Set(beats.map(b=>b[0]));
+
+    // If the set of beats changed (added/removed) OR their order changed, do a full rebuild
+    const orderChanged = beats.map(b=>b[0]).join(',') !== [...renderedIds].join(',');
+    const idsChanged = forceRebuild || currentIds.size !== renderedIds.size || [...currentIds].some(id=>!renderedIds.has(id)) || orderChanged;
+
+    if(idsChanged){
+      container.innerHTML = '';
+      beats.forEach(([id, beat])=>{
+        const card = document.createElement('div');
+        card.className = 'beat-card';
+        const isHighlighted = highlightSlug && slugify(beat.name) === highlightSlug;
+        const isOriginalLink = originalLinkSlug && slugify(beat.name) === originalLinkSlug;
+        if(isHighlighted){
+          card.classList.add('highlighted');
+        } else {
+          card.classList.add('dimmed');
+        }
+        card.dataset.isOriginal = isHighlighted ? '1' : '0';
+        card.dataset.beatId = id;
+        card.dataset.search = `${beat.name||''} ${beat.genre||''} ${beat.key||''}`.toLowerCase();
+        card.innerHTML = `
+          <div class="card-top-row">
+            ${isOriginalLink ? `<div class="highlight-banner">👉 This is the beat you're looking for</div>` : `<div></div>`}
+            <div class="exclusive-badge">Exclusive</div>
+          </div>
+          <div class="beat-head">
+            <button class="play-btn list-play-btn" aria-label="Play">
+              <svg class="icon-play" viewBox="0 0 24 24" fill="#000"><path d="M8 5v14l11-7z"/></svg>
+              <svg class="icon-pause" viewBox="0 0 24 24" fill="#000" style="display:none"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+            </button>
+            <div class="cover-wrap">
+              ${beat.cover ? `<img class="beat-cover${isHighlighted ? ' large' : ''}" src="covers/${beat.cover}" onerror="this.outerHTML='<div class=&quot;beat-cover-placeholder${isHighlighted ? ' large' : ''}&quot;>🎵</div>'">` : `<div class="beat-cover-placeholder${isHighlighted ? ' large' : ''}">🎵</div>`}
+              <button class="play-btn" aria-label="Play">
+                <svg class="icon-play" viewBox="0 0 24 24" fill="#000"><path d="M8 5v14l11-7z"/></svg>
+                <svg class="icon-pause" viewBox="0 0 24 24" fill="#000" style="display:none"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+              </button>
+            </div>
+            <div class="beat-info">
+              <div class="beat-title">${beat.name}</div>
+
+              <div class="beat-producer">
+                Prod. by Shri Beatz
+                <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#3ea6ff"/><path d="M8 12.5l2.5 2.5L16 9.5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              ${beat.genre ? `<div class="dimmed-genre">${beat.genre}</div>` : ''}
+              <div class="beat-tags">
+                <span class="beat-tag play-count">🎧 ${beat.plays||0}</span>
+                ${beat.genre ? `<span class="beat-tag">${beat.genre}</span>` : ''}
+                ${beat.key ? `<span class="beat-tag">${beat.key}</span>` : ''}
+                ${beat.bpm ? `<span class="beat-tag">${beat.bpm} BPM</span>` : ''}
+              </div>
+              <div class="beat-actions">
+                <button class="like-btn" aria-label="Like">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7.5-4.6-10-9.1C0.3 8.4 2 5 5.4 5c2 0 3.4 1.1 4.1 2.2C10.2 6.1 11.6 5 13.6 5 17 5 18.7 8.4 17 12c-2.5 4.5-5 9-5 9z"/></svg>
+                  <span class="like-count">${beat.likes||0}</span>
+                </button>
+              </div>
+              <div class="beat-details">
+                ${beat.createdAt ? `<div class="beat-detail-row"><span class="label">Published</span><span class="value">${new Date(beat.createdAt).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' })}</span></div>` : ''}
+                <div class="beat-detail-row"><span class="label">Plays</span><span class="value">${beat.plays||0}</span></div>
+                ${beat.bpm ? `<div class="beat-detail-row"><span class="label">BPM</span><span class="value">${beat.bpm}</span></div>` : ''}
+                ${beat.key ? `<div class="beat-detail-row"><span class="label">Key</span><span class="value">${beat.key}</span></div>` : ''}
+              </div>
+              <div class="mini-footer">
+                <button class="cart-buy-btn" onclick='openModal("${id}", ${JSON.stringify(beat.name)}, ${beat.price})'>
+                  Buy Now ₹${beat.price}
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="player-track-row">
+            <button class="play-btn track-play-btn" aria-label="Play">
+              <svg class="icon-play" viewBox="0 0 24 24" fill="#000"><path d="M8 5v14l11-7z"/></svg>
+              <svg class="icon-pause" viewBox="0 0 24 24" fill="#000" style="display:none"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+            </button>
+            <div class="player-track">
+              <div class="progress-wrap">
+                <div class="progress-fill"></div>
+                <div class="progress-handle"></div>
+              </div>
+              <div class="player-time">
+                <span class="time-current">0:00</span>
+                <span class="time-total">0:00</span>
+              </div>
+            </div>
+          </div>
+          <audio preload="none" src="beats/${beat.file}"></audio>
+          <div class="beat-footer">
+            <div>
+              <div class="price">₹${beat.price}</div>
+              <div class="urgency-line">🔥 Sold once, gone forever</div>
+            </div>
+            <button class="buy-btn" onclick='openModal("${id}", ${JSON.stringify(beat.name)}, ${beat.price})'>Buy Now</button>
+          </div>
+        `;
+        const audioEl = card.querySelector('audio');
+        const playBtns = card.querySelectorAll('.play-btn');
+        const progressWrap = card.querySelector('.progress-wrap');
+        const progressFill = card.querySelector('.progress-fill');
+        const progressHandle = card.querySelector('.progress-handle');
+        const timeCurrent = card.querySelector('.time-current');
+        const timeTotal = card.querySelector('.time-total');
+
+        function formatTime(sec){
+          if(!isFinite(sec)) return '0:00';
+          const m = Math.floor(sec/60);
+          const s = Math.floor(sec%60).toString().padStart(2,'0');
+          return `${m}:${s}`;
+        }
+
+        playBtns.forEach(btn=>{
+          btn.addEventListener('click', ()=>{
+            // Pause all other playing audios on the page
+            document.querySelectorAll('audio').forEach(a=>{ if(a !== audioEl) a.pause(); });
+            if(audioEl.paused){ audioEl.play(); } else { audioEl.pause(); }
+          });
+        });
+        audioEl.addEventListener('play', ()=>{
+          playBtns.forEach(btn=>{
+            btn.querySelector('.icon-play').style.display='none';
+            btn.querySelector('.icon-pause').style.display='block';
+            btn.classList.add('is-playing');
+          });
+        });
+        audioEl.addEventListener('pause', ()=>{
+          playBtns.forEach(btn=>{
+            btn.querySelector('.icon-play').style.display='block';
+            btn.querySelector('.icon-pause').style.display='none';
+            btn.classList.remove('is-playing');
+          });
+        });
+        audioEl.addEventListener('loadedmetadata', ()=>{
+          timeTotal.textContent = formatTime(audioEl.duration);
+        });
+        audioEl.addEventListener('timeupdate', ()=>{
+          const pct = audioEl.duration ? (audioEl.currentTime/audioEl.duration)*100 : 0;
+          progressFill.style.width = pct+'%';
+          progressHandle.style.left = pct+'%';
+          timeCurrent.textContent = formatTime(audioEl.currentTime);
+        });
+        audioEl.addEventListener('ended', ()=>{
+          playBtns.forEach(btn=>{
+            btn.querySelector('.icon-play').style.display='block';
+            btn.querySelector('.icon-pause').style.display='none';
+            btn.classList.remove('is-playing');
+          });
+        });
+        progressWrap.addEventListener('click', (e)=>{
+          const rect = progressWrap.getBoundingClientRect();
+          const pct = (e.clientX - rect.left) / rect.width;
+          if(audioEl.duration){ audioEl.currentTime = pct * audioEl.duration; }
+        });
+
+        let counted = false;
+        let playTimer = null;
+        audioEl.addEventListener('play', ()=>{
+          if(!counted){
+            playTimer = setTimeout(()=>{
+              if(!counted){
+                counted = true;
+                const plaRef = ref(db, 'beats/'+id+'/plays');
+                runTransaction(plaRef, (val)=> (val||0)+1);
+              }
+            }, 10000);
+          }
+        });
+        audioEl.addEventListener('pause', ()=>{
+          if(playTimer){ clearTimeout(playTimer); playTimer=null; }
+        });
+
+        const likeBtn = card.querySelector('.like-btn');
+        const likeCountEl = card.querySelector('.like-count');
+        const likedKey = 'shribeatz_liked_' + id;
+        if(localStorage.getItem(likedKey)){
+          likeBtn.classList.add('liked');
+        }
+        likeBtn.addEventListener('click', (e)=>{
+          e.stopPropagation();
+          const alreadyLiked = !!localStorage.getItem(likedKey);
+          const likeRef = ref(db, 'beats/'+id+'/likes');
+          if(alreadyLiked){
+            localStorage.removeItem(likedKey);
+            likeBtn.classList.remove('liked');
+            runTransaction(likeRef, (val)=> Math.max((val||0)-1, 0));
+          } else {
+            localStorage.setItem(likedKey, '1');
+            likeBtn.classList.add('liked');
+            runTransaction(likeRef, (val)=> (val||0)+1);
+          }
+        });
+
+        // Clicking a beat (except play/buy controls) makes it the new featured beat —
+        // it moves to the top of the list with the full hero layout, banner included.
+        card.addEventListener('click', (e)=>{
+          if(e.target.closest('.play-btn') || e.target.closest('.buy-btn') || e.target.closest('.progress-wrap')) return;
+          const clickedSlug = slugify(beat.name);
+          if(window.__highlightSlug === clickedSlug) return;
+          window.__highlightSlug = clickedSlug;
+          const newUrl = window.location.pathname + '?beat=' + encodeURIComponent(clickedSlug);
+          window.history.replaceState({}, '', newUrl);
+          container.classList.add('fading');
+          setTimeout(()=>{
+            renderBeats(lastBeatsData, true);
+            container.classList.remove('fading');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }, 220);
+        });
+
+        container.appendChild(card);
+      });
+      renderedIds = currentIds;
+      applySearchFilter();
+    } else {
+      // Only update play counts in place, don't touch audio elements
+      beats.forEach(([id, beat])=>{
+        const card = container.querySelector(`[data-beat-id="${id}"]`);
+        if(card){
+          const countEl = card.querySelector('.play-count');
+          if(countEl) countEl.textContent = `🎧 ${beat.plays||0}`;
+          const likeCountEl = card.querySelector('.like-count');
+          if(likeCountEl) likeCountEl.textContent = beat.likes||0;
+        }
+      });
+    }
+  }
+
+  onValue(beatsRef, (snapshot) => {
+    const data = snapshot.val();
+    lastBeatsData = data;
+    renderBeats(data, false);
+  });
+
+  function applySearchFilter(){
+    const term = document.getElementById('searchInput').value.trim().toLowerCase();
+    const cards = container.querySelectorAll('.beat-card');
+    let anyVisible = false;
+    cards.forEach(card=>{
+      const match = !term || card.dataset.search.includes(term);
+      card.style.display = match ? '' : 'none';
+      if(match) anyVisible = true;
+    });
+    let noResultsEl = container.querySelector('.no-results');
+    if(!anyVisible && cards.length > 0){
+      if(!noResultsEl){
+        noResultsEl = document.createElement('div');
+        noResultsEl.className = 'empty no-results';
+        noResultsEl.textContent = 'No beats match your search.';
+        container.appendChild(noResultsEl);
+      }
+    } else if(noResultsEl){
+      noResultsEl.remove();
+    }
+  }
+  document.getElementById('searchInput').addEventListener('input', applySearchFilter);
+
+  window.openModal = function(id, name, price){
+    currentBeat = {id, name, price};
+    document.getElementById('modalBeatName').textContent = name;
+    document.getElementById('modalPrice').textContent = price;
+    document.getElementById('formStep').style.display='block';
+    document.getElementById('payStep').style.display='none';
+    document.getElementById('buyOverlay').classList.add('active');
+  }
+  window.closeModal = function(){
+    document.getElementById('buyOverlay').classList.remove('active');
+    document.getElementById('buyerName').value='';
+    document.getElementById('buyerStageName').value='';
+    document.getElementById('buyerEmail').value='';
+    document.getElementById('buyerPhone').value='';
+    document.getElementById('buyerCountry').value='';
+    document.getElementById('buyerState').value='';
+    document.getElementById('buyerCity').value='';
+    document.getElementById('formStep').style.display='block';
+    document.getElementById('payStep').style.display='none';
+  }
+
+  const UPI_ID = "bangaleshrikant31@ybl";
+  const UPI_PAYEE_NAME = "Shri Beatz";
+
+  window.proceedToPay = function(){
+    const name = document.getElementById('buyerName').value.trim();
+    const stageName = document.getElementById('buyerStageName').value.trim();
+    const email = document.getElementById('buyerEmail').value.trim();
+    const phone = document.getElementById('buyerPhone').value.trim();
+    const country = document.getElementById('buyerCountry').value.trim();
+    const state = document.getElementById('buyerState').value.trim();
+    const city = document.getElementById('buyerCity').value.trim();
+    if(!name || !email){
+      alert('Please enter your name and email.');
+      return;
+    }
+
+    // Generate a unique order id, e.g. SB-8F3K2
+    const orderId = 'SB-' + Date.now().toString(36).toUpperCase().slice(-6);
+
+    // Create the order in Firebase as "pending" — status updated manually later from admin panel
+    const orderRef = ref(db, 'orders/' + orderId);
+    set(orderRef, {
+      orderId: orderId,
+      beatId: currentBeat.id,
+      beatName: currentBeat.name,
+      price: currentBeat.price,
+      buyerName: name,
+      buyerStageName: stageName,
+      buyerEmail: email,
+      buyerPhone: phone,
+      buyerCountry: country,
+      buyerState: state,
+      buyerCity: city,
+      status: "pending",
+      createdAt: Date.now()
+    });
+
+    // Notify admin instantly so payment can be watched for
+    fetch('https://ntfy.sh/shribeatz-orders-sk2001', {
+      method: 'POST',
+      headers: { 'Title': 'New Order (Pending Payment)', 'Priority': 'urgent', 'Tags': 'moneybag' },
+      body: `${currentBeat.name} - ₹${currentBeat.price}\nOrder: ${orderId}\nBuyer: ${name} | ${phone}`
+    }).catch(()=>{});
+
+    // Build UPI payment link with amount, note (order id) prefilled
+    const upiNote = encodeURIComponent(orderId + ' ' + currentBeat.name);
+    const upiLink = `upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(UPI_PAYEE_NAME)}&am=${currentBeat.price}&cu=INR&tn=${upiNote}`;
+
+    // Show pay step
+    document.getElementById('formStep').style.display='none';
+    document.getElementById('payStep').style.display='block';
+    document.getElementById('upiAmount').textContent = currentBeat.price;
+    document.getElementById('upiIdDisplay').textContent = UPI_ID;
+    document.getElementById('payBeatName').textContent = currentBeat.name;
+    document.getElementById('payOrderId').textContent = orderId;
+    document.getElementById('upiIntentBtn').href = upiLink;
+
+    // Generate QR code from the same UPI link (generic, no app branding)
+    document.getElementById('qrCodeBox').innerHTML = '';
+    QRCode.toCanvas(upiLink, { width: 200, margin: 1, color: { dark: "#000000", light: "#ffffff" } }, function(err, canvas){
+      if(!err) document.getElementById('qrCodeBox').appendChild(canvas);
+    });
+
+    // Prefill WhatsApp confirmation message
+    const waMsg = encodeURIComponent(`Hi, I paid ₹${currentBeat.price} for "${currentBeat.name}" (Order: ${orderId}). Sharing my payment screenshot.`);
+    document.getElementById('waConfirmBtn').href = `https://wa.me/919137471587?text=${waMsg}`;
+  }
+</script>
+</body>
+</html>
