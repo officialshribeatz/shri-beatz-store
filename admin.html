@@ -205,18 +205,7 @@
       </div>
     </div>
 
-    <div class="collapsible-header" onclick="toggleOrders()">
-      <h2 style="margin:0;border:none;flex:1;">📦 Orders</h2>
-      <span class="chevron" id="ordersChevron">⌄</span>
-    </div>
-    <div class="card" id="ordersList" style="display:none">
-      <div class="msg">Loading...</div>
-    </div>
-
-    <div class="collapsible-header" onclick="toggleReport()">
-      <h2 style="margin:0;border:none;flex:1;">📊 Sales Report</h2>
-      <span class="chevron" id="reportChevron">⌄</span>
-    </div>
+    <button class="secondary" onclick="toggleReport()" style="margin-bottom:12px;">📊 View Sales Report</button>
     <div class="card" id="reportPanel" style="display:none">
       <div class="field">
         <label>Quick Select (Financial Year, Apr–Mar)</label>
@@ -246,17 +235,13 @@
       </div>
     </div>
 
-    <div class="collapsible-header" onclick="toggleManageBeats()">
-      <h2 style="margin:0;border:none;flex:1;">🎵 Manage Beats</h2>
-      <span class="chevron" id="manageBeatsChevron">⌄</span>
+
+    <div class="collapsible-header" onclick="toggleOrders()">
+      <h2 style="margin:0;border:none;flex:1;">📦 Orders</h2>
+      <span class="chevron" id="ordersChevron">⌄</span>
     </div>
-    <div id="manageBeatsPanel" style="display:none">
-      <div class="field">
-        <input type="text" id="adminSearch" placeholder="🔍 Search beats...">
-      </div>
-      <div class="card" id="beatsList">
-        <div class="msg">Loading...</div>
-      </div>
+    <div class="card" id="ordersList" style="display:none">
+      <div class="msg">Loading...</div>
     </div>
 
     <div class="collapsible-header" onclick="toggleAddBeat()">
@@ -294,6 +279,19 @@
       </div>
       <button onclick="addBeat()">Add Beat</button>
       <div class="msg" id="addMsg"></div>
+    </div>
+
+    <div class="collapsible-header" onclick="toggleManageBeats()">
+      <h2 style="margin:0;border:none;flex:1;">🎵 Manage Beats</h2>
+      <span class="chevron" id="manageBeatsChevron">⌄</span>
+    </div>
+    <div id="manageBeatsPanel" style="display:none">
+      <div class="field">
+        <input type="text" id="adminSearch" placeholder="🔍 Search beats...">
+      </div>
+      <div class="card" id="beatsList">
+        <div class="msg">Loading...</div>
+      </div>
     </div>
   </div>
 </div>
@@ -511,13 +509,21 @@
   const RAZORPAY_FEE_RATE = 0.0236; // 2% + 18% GST on that fee ≈ 2.36%
   let __lastReport = null;
 
+  const BUSINESS_START_FY_YEAR = 2026; // FY 2026-27 — the business's first financial year
+
   function buildFyButtons(){
     const row = document.getElementById('fyBtnRow');
     const now = new Date();
     const currentCalYear = now.getFullYear();
     // If we're before April, the current FY started last calendar year
     const currentFyStartYear = now.getMonth() >= 3 ? currentCalYear : currentCalYear - 1;
-    const years = [currentFyStartYear + 1, currentFyStartYear, currentFyStartYear - 1, currentFyStartYear - 2];
+    // Show every FY from the business's first year up through the current one.
+    // Since currentFyStartYear is always computed from today's date, this list
+    // grows by itself every April — no manual updates needed in future years.
+    const years = [];
+    for(let y = currentFyStartYear; y >= BUSINESS_START_FY_YEAR; y--){
+      years.push(y);
+    }
     row.innerHTML = '';
     years.forEach(startYear=>{
       const label = `${startYear}-${String(startYear+1).slice(-2)}`;
