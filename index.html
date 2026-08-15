@@ -1183,7 +1183,7 @@
     document.getElementById('upiIntentBtn').href = upiLink;
 
     // Generate QR code as an image via a reliable QR API (no JS library needed)
-    document.getElementById('qrCodeBox').innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiLink)}" width="200" height="200" style="border-radius:10px;background:#fff;padding:8px" alt="Scan to Pay">`;
+    document.getElementById('qrCodeBox').innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(upiLink)}" width="140" height="140" style="border-radius:10px;background:#fff;padding:6px" alt="Scan to Pay">`;
 
     // Prefill WhatsApp confirmation message
     const waMsg = encodeURIComponent(`Hi, I paid ₹${currentBeat.price} for "${currentBeat.name}" (Order: ${orderId}). Sharing my payment screenshot.`);
