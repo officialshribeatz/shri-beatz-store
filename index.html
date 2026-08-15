@@ -743,7 +743,7 @@
       <div class="modal-legal">✅ 100% Exclusive • <a href="license.html" target="_blank">What you get →</a></div>
     </div>
     <div id="payStep" style="display:none">
-      <div class="success-box">
+      <div class="success-box" id="qrSubStep">
         <h3 style="margin-bottom:14px">Scan &amp; Pay ₹<span id="upiAmount"></span></h3>
         <div id="qrCodeBox" style="display:flex;justify-content:center;margin-bottom:14px"></div>
         <a id="upiIntentBtn" href="#" class="whatsapp-support-btn" style="background:#2a1c1c;border-color:#4a2a2a;color:#ff9d4d;display:flex;align-items:center;justify-content:center;gap:6px">
@@ -757,11 +757,23 @@
           <div class="order-row"><span>Beat</span><span id="payBeatName" class="order-value"></span></div>
           <div class="order-row"><span>Order ID</span><span id="payOrderId" class="order-value mono"></span></div>
         </div>
+        <button class="pay-btn" style="width:100%;margin-top:16px" onclick="markIPaid()">✅ I've Paid</button>
+        <div class="modal-actions">
+          <button class="cancel-btn" style="flex:1" onclick="closeModal()">Close</button>
+        </div>
+      </div>
+      <div class="success-box" id="confirmedSubStep" style="display:none">
+        <div class="tick">✅</div>
+        <h3>Payment Received!</h3>
+        <div class="order-summary">
+          <div class="order-row"><span>Beat</span><span id="confirmBeatName" class="order-value"></span></div>
+          <div class="order-row"><span>Order ID</span><span id="confirmOrderId" class="order-value mono"></span></div>
+        </div>
         <div class="next-steps">
-          <div class="next-steps-title">After you pay</div>
-          <div class="next-step-item">✅ Tap the button below and send us your payment screenshot on WhatsApp</div>
-          <div class="next-step-item">🔍 We manually verify every payment before delivery</div>
-          <div class="next-step-item">📩 Once confirmed, WAV + Trackout stems are sent within 24 hours</div>
+          <div class="next-steps-title">What happens next</div>
+          <div class="next-step-item">🔍 We're verifying your payment now</div>
+          <div class="next-step-item">📩 Once confirmed, WAV + Trackout stems are sent to your WhatsApp/Email within 24 hours</div>
+          <div class="next-step-item">💬 Sending your payment screenshot below speeds up verification</div>
         </div>
         <a href="https://wa.me/919137471587" target="_blank" class="whatsapp-support-btn" id="waConfirmBtn">💬 Send Payment Screenshot on WhatsApp</a>
         <div class="modal-actions">
@@ -774,7 +786,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getDatabase, ref, onValue, push, set, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+  import { getDatabase, ref, onValue, push, set, update, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAZOYSy3s3HwkjhnwQzWPMzabky9LrjX8c",
@@ -793,6 +805,10 @@
   const container = document.getElementById('beatsList');
 
   const beatsRef = ref(db, 'beats');
+  window.__allOrdersCache = {};
+  onValue(ref(db, 'orders'), (snapshot) => {
+    window.__allOrdersCache = snapshot.val() || {};
+  });
   let renderedIds = new Set();
   let lastBeatsData = null;
 
@@ -1096,6 +1112,8 @@
     document.getElementById('modalPrice').textContent = price;
     document.getElementById('formStep').style.display='block';
     document.getElementById('payStep').style.display='none';
+    document.getElementById('qrSubStep').style.display='block';
+    document.getElementById('confirmedSubStep').style.display='none';
     document.getElementById('upiIdBox').style.display='none';
     document.getElementById('upiIdToggle').textContent='Show UPI ID instead';
     document.getElementById('buyOverlay').classList.add('active');
@@ -1111,6 +1129,8 @@
     document.getElementById('buyerCity').value='';
     document.getElementById('formStep').style.display='block';
     document.getElementById('payStep').style.display='none';
+    document.getElementById('qrSubStep').style.display='block';
+    document.getElementById('confirmedSubStep').style.display='none';
   }
 
   window.toggleUpiId = function(){
@@ -1127,6 +1147,27 @@
 
   const UPI_ID = "bangaleshrikant31@ybl";
   const UPI_PAYEE_NAME = "Shri Beatz";
+  let currentOrderId = null;
+  const DUPLICATE_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
+
+  function showPayScreen(orderId){
+    const upiNote = encodeURIComponent(orderId + ' ' + currentBeat.name);
+    const upiLink = `upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(UPI_PAYEE_NAME)}&am=${currentBeat.price}&cu=INR&tn=${upiNote}`;
+
+    document.getElementById('formStep').style.display='none';
+    document.getElementById('payStep').style.display='block';
+    document.getElementById('qrSubStep').style.display='block';
+    document.getElementById('confirmedSubStep').style.display='none';
+    document.getElementById('upiAmount').textContent = currentBeat.price;
+    document.getElementById('upiIdDisplay').textContent = UPI_ID;
+    document.getElementById('payBeatName').textContent = currentBeat.name;
+    document.getElementById('payOrderId').textContent = orderId;
+    document.getElementById('upiIntentBtn').href = upiLink;
+    document.getElementById('qrCodeBox').innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(upiLink)}" width="140" height="140" style="border-radius:10px;background:#fff;padding:6px" alt="Scan to Pay">`;
+
+    const waMsg = encodeURIComponent(`Hi, I paid ₹${currentBeat.price} for "${currentBeat.name}" (Order: ${orderId}). Sharing my payment screenshot.`);
+    document.getElementById('waConfirmBtn').href = `https://wa.me/919137471587?text=${waMsg}`;
+  }
 
   window.proceedToPay = function(){
     const name = document.getElementById('buyerName').value.trim();
@@ -1141,8 +1182,25 @@
       return;
     }
 
+    // Check for an existing pending order for the same email + beat within the last 5 minutes
+    const allOrders = window.__allOrdersCache || {};
+    const now = Date.now();
+    const existing = Object.values(allOrders).find(o =>
+      o.beatId === currentBeat.id &&
+      o.buyerEmail === email &&
+      o.status === 'pending' &&
+      (now - (o.createdAt||0)) < DUPLICATE_WINDOW_MS
+    );
+
+    if(existing){
+      currentOrderId = existing.orderId;
+      showPayScreen(existing.orderId);
+      return;
+    }
+
     // Generate a unique order id, e.g. SB-8F3K2
     const orderId = 'SB-' + Date.now().toString(36).toUpperCase().slice(-6);
+    currentOrderId = orderId;
 
     // Create the order in Firebase as "pending" — status updated manually later from admin panel
     const orderRef = ref(db, 'orders/' + orderId);
@@ -1169,25 +1227,22 @@
       body: `${currentBeat.name} - ₹${currentBeat.price}\nOrder: ${orderId}\nBuyer: ${name} | ${phone}`
     }).catch(()=>{});
 
-    // Build UPI payment link with amount, note (order id) prefilled
-    const upiNote = encodeURIComponent(orderId + ' ' + currentBeat.name);
-    const upiLink = `upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(UPI_PAYEE_NAME)}&am=${currentBeat.price}&cu=INR&tn=${upiNote}`;
+    showPayScreen(orderId);
+  }
 
-    // Show pay step
-    document.getElementById('formStep').style.display='none';
-    document.getElementById('payStep').style.display='block';
-    document.getElementById('upiAmount').textContent = currentBeat.price;
-    document.getElementById('upiIdDisplay').textContent = UPI_ID;
-    document.getElementById('payBeatName').textContent = currentBeat.name;
-    document.getElementById('payOrderId').textContent = orderId;
-    document.getElementById('upiIntentBtn').href = upiLink;
-
-    // Generate QR code as an image via a reliable QR API (no JS library needed)
-    document.getElementById('qrCodeBox').innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(upiLink)}" width="140" height="140" style="border-radius:10px;background:#fff;padding:6px" alt="Scan to Pay">`;
-
-    // Prefill WhatsApp confirmation message
-    const waMsg = encodeURIComponent(`Hi, I paid ₹${currentBeat.price} for "${currentBeat.name}" (Order: ${orderId}). Sharing my payment screenshot.`);
-    document.getElementById('waConfirmBtn').href = `https://wa.me/919137471587?text=${waMsg}`;
+  window.markIPaid = function(){
+    if(currentOrderId){
+      update(ref(db, 'orders/'+currentOrderId), { status: 'awaiting_confirmation', markedPaidAt: Date.now() });
+      document.getElementById('confirmBeatName').textContent = currentBeat.name;
+      document.getElementById('confirmOrderId').textContent = currentOrderId;
+      fetch('https://ntfy.sh/shribeatz-orders-sk2001', {
+        method: 'POST',
+        headers: { 'Title': 'Buyer marked payment done!', 'Priority': 'high', 'Tags': 'eyes' },
+        body: `Order ${currentOrderId} - ${currentBeat.name} - ₹${currentBeat.price}\nBuyer says they've paid. Please verify.`
+      }).catch(()=>{});
+    }
+    document.getElementById('qrSubStep').style.display='none';
+    document.getElementById('confirmedSubStep').style.display='block';
   }
 </script>
 </body>
