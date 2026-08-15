@@ -566,6 +566,55 @@
   }
   .success-box .tick{font-size:44px;margin-bottom:10px;}
   .success-box p{color:var(--muted);font-size:13px;margin-top:10px;line-height:1.5;}
+  .order-summary{
+    background:#0f0f0f;
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:14px 16px;
+    margin-top:14px;
+    text-align:left;
+  }
+  .order-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-size:13px;
+    padding:5px 0;
+    color:var(--muted);
+  }
+  .order-value{color:var(--text);font-weight:600;text-align:right;}
+  .order-value.mono{font-family:monospace;font-size:11px;}
+  .next-steps{
+    text-align:left;
+    margin-top:16px;
+  }
+  .next-steps-title{
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    color:var(--muted);
+    font-weight:700;
+    margin-bottom:8px;
+  }
+  .next-step-item{
+    font-size:12.5px;
+    color:#d8d8d8;
+    line-height:1.6;
+    margin-bottom:6px;
+  }
+  .whatsapp-support-btn{
+    display:block;
+    text-align:center;
+    margin-top:16px;
+    padding:11px;
+    border-radius:12px;
+    background:#1c2b1c;
+    border:1px solid #2a4a2a;
+    color:#7ee787;
+    text-decoration:none;
+    font-size:12.5px;
+    font-weight:700;
+  }
   footer{
     text-align:center;
     color:var(--muted);
@@ -682,7 +731,18 @@
       <div class="success-box">
         <div class="tick">✅</div>
         <h3>Payment Successful!</h3>
-        <p>Thank you for your purchase. Your exclusive beat file (WAV + Trackout) will be sent to your WhatsApp / Email within 24 hours.</p>
+        <div class="order-summary">
+          <div class="order-row"><span>Beat</span><span id="successBeatName" class="order-value"></span></div>
+          <div class="order-row"><span>Amount Paid</span><span id="successAmount" class="order-value"></span></div>
+          <div class="order-row"><span>Payment ID</span><span id="successPaymentId" class="order-value mono"></span></div>
+        </div>
+        <div class="next-steps">
+          <div class="next-steps-title">What happens next</div>
+          <div class="next-step-item">📩 Exclusive WAV + Trackout stems sent to your WhatsApp/Email within 24 hours</div>
+          <div class="next-step-item">📄 License certificate included with your files</div>
+          <div class="next-step-item">🔒 This beat is now removed from sale — it's exclusively yours</div>
+        </div>
+        <a href="https://wa.me/919137471587" target="_blank" class="whatsapp-support-btn">💬 Message us if you need help</a>
         <div class="modal-actions">
           <button class="pay-btn" style="flex:1" onclick="closeModal()">Done</button>
         </div>
@@ -1065,6 +1125,9 @@
           body: `${currentBeat.name} - ₹${currentBeat.price}\nBuyer: ${name} | ${phone}`
         }).catch(()=>{});
         document.getElementById('formStep').style.display='none';
+        document.getElementById('successBeatName').textContent = currentBeat.name;
+        document.getElementById('successAmount').textContent = '₹' + currentBeat.price;
+        document.getElementById('successPaymentId').textContent = response.razorpay_payment_id;
         document.getElementById('successStep').style.display='block';
       },
       theme: { color: "#ff8c1a" }
