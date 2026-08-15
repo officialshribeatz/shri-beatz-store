@@ -746,9 +746,13 @@
       <div class="success-box">
         <h3 style="margin-bottom:14px">Scan &amp; Pay ₹<span id="upiAmount"></span></h3>
         <div id="qrCodeBox" style="display:flex;justify-content:center;margin-bottom:14px"></div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:6px">or pay via UPI ID</div>
-        <div style="font-family:monospace;font-size:14px;background:#0f0f0f;border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:14px" id="upiIdDisplay"></div>
-        <a id="upiIntentBtn" href="#" class="whatsapp-support-btn" style="background:#2a1c1c;border-color:#4a2a2a;color:#ff9d4d">📱 Pay with GPay / PhonePe / Paytm</a>
+        <a id="upiIntentBtn" href="#" class="whatsapp-support-btn" style="background:#2a1c1c;border-color:#4a2a2a;color:#ff9d4d;display:flex;align-items:center;justify-content:center;gap:6px">
+          📱 Pay with GPay / PhonePe / Paytm
+        </a>
+        <div id="upiIdToggle" onclick="toggleUpiId()" style="font-size:12px;color:var(--muted);margin-top:12px;margin-bottom:6px;cursor:pointer;text-decoration:underline">Show UPI ID instead</div>
+        <div id="upiIdBox" style="display:none">
+          <div style="font-family:monospace;font-size:14px;background:#0f0f0f;border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:14px" id="upiIdDisplay"></div>
+        </div>
         <div class="order-summary">
           <div class="order-row"><span>Beat</span><span id="payBeatName" class="order-value"></span></div>
           <div class="order-row"><span>Order ID</span><span id="payOrderId" class="order-value mono"></span></div>
@@ -1094,6 +1098,8 @@
     document.getElementById('modalPrice').textContent = price;
     document.getElementById('formStep').style.display='block';
     document.getElementById('payStep').style.display='none';
+    document.getElementById('upiIdBox').style.display='none';
+    document.getElementById('upiIdToggle').textContent='Show UPI ID instead';
     document.getElementById('buyOverlay').classList.add('active');
   }
   window.closeModal = function(){
@@ -1107,6 +1113,18 @@
     document.getElementById('buyerCity').value='';
     document.getElementById('formStep').style.display='block';
     document.getElementById('payStep').style.display='none';
+  }
+
+  window.toggleUpiId = function(){
+    const box = document.getElementById('upiIdBox');
+    const toggle = document.getElementById('upiIdToggle');
+    if(box.style.display === 'none'){
+      box.style.display = 'block';
+      toggle.textContent = 'Hide UPI ID';
+    } else {
+      box.style.display = 'none';
+      toggle.textContent = 'Show UPI ID instead';
+    }
   }
 
   const UPI_ID = "bangaleshrikant31@ybl";
