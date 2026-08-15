@@ -446,7 +446,7 @@
             <div class="beat-row-actions">
               <button class="link-btn" onclick='copyBeatLink("${id}", ${JSON.stringify(beat.name||"")})'>🔗 Copy Link</button>
               <button class="edit-btn" onclick="updateBeat('${id}')">Save Changes</button>
-              <button class="del-btn" onclick="deleteBeat('${id}')">Delete</button>
+              <button class="del-btn" onclick='deleteBeat("${id}", ${JSON.stringify(beat.name||"this beat")})'>Delete</button>
             </div>
           </div>
         `;
@@ -679,8 +679,8 @@
     update(ref(db), updates);
   }
 
-  window.deleteBeat = function(id){
-    if(confirm('Delete this beat?')){
+  window.deleteBeat = function(id, name){
+    if(confirm(`Delete "${name}"?\n\nThis cannot be undone.`)){
       remove(ref(db, 'beats/'+id));
     }
   }
