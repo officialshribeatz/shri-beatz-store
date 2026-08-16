@@ -8,6 +8,10 @@
 <link rel="icon" href="admin-logo.png">
 <link rel="apple-touch-icon" href="admin-logo.png">
 <meta name="theme-color" content="#0a0a0a">
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+  emailjs.init({ publicKey: "7RB-WLO7yHtxSOOXi" });
+</script>
 <style>
   :root{
     --bg:#0a0a0a;--bg2:#0f0f0f;--card:#161616;--card2:#1b1b1b;--orange:#ff8c1a;--orange-dim:#ffa63d;
@@ -784,6 +788,22 @@
     const order = (window.__allOrders || {})[id];
     if(order && order.beatId){
       update(ref(db, 'beats/'+order.beatId), { isPrivate: true });
+    }
+    // Send order confirmation email to buyer
+    if(order && order.buyerEmail){
+      const orderDate = new Date(order.createdAt || Date.now()).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+      emailjs.send('service_wevb6lj', 'template_usf040p', {
+        customer_name: order.buyerName || 'Customer',
+        customer_email: order.buyerEmail,
+        beat_name: order.beatName || '',
+        amount: order.price || '',
+        order_id: order.orderId || id,
+        order_date: orderDate
+      }).then(function(response){
+        console.log('Confirmation email sent!', response.status);
+      }).catch(function(error){
+        console.error('Confirmation email failed:', error);
+      });
     }
   }
 
