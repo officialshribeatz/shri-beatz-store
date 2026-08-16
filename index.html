@@ -841,7 +841,7 @@
 
     // Sort by manual "order" field first (lower = shown first). Beats without an order
     // fall back to newest-first, and always appear after ordered ones.
-    const beats = Object.entries(data).sort((a,b)=>{
+    const beats = Object.entries(data).filter(([id, b]) => !b.isPrivate).sort((a,b)=>{
       if(highlightSlug){
         const aMatch = slugify(a[1].name) === highlightSlug;
         const bMatch = slugify(b[1].name) === highlightSlug;

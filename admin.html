@@ -190,6 +190,7 @@
       <div class="stat-card">
         <div class="num" id="statOrders">0</div>
         <div class="label">Total Orders</div>
+        <div id="statOrdersPending" style="font-size:11px;color:#ffb44d;font-weight:700;margin-top:2px;display:none"></div>
       </div>
       <div class="stat-card">
         <div class="num" id="statEarnings">₹0</div>
@@ -410,7 +411,7 @@
             </div>
             <div class="beat-summary-clickable" onclick="toggleBeatRow('${id}')">
               <div class="beat-summary-info">
-                <div class="beat-summary-name">${beat.name||'Untitled'}</div>
+                <div class="beat-summary-name">${beat.name||'Untitled'} ${beat.isPrivate ? '<span style="background:#2a1414;color:#ff6b6b;border:1px solid #4a2020;font-size:9.5px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:6px;">🔒 PRIVATE</span>' : ''}</div>
                 <div class="beat-summary-meta">₹${beat.price||0} · 🎧 ${beat.plays||0} plays${beat.genre ? ' · '+beat.genre : ''}</div>
               </div>
               <span class="chevron" id="chevron-${id}">⌄</span>
@@ -447,6 +448,9 @@
               <button class="link-btn" onclick='copyBeatLink("${id}", ${JSON.stringify(beat.name||"")})'>🔗 Copy Link</button>
               <button class="edit-btn" onclick="updateBeat('${id}')">Save Changes</button>
               <button class="del-btn" onclick='deleteBeat("${id}", ${JSON.stringify(beat.name||"this beat")})'>Delete</button>
+            </div>
+            <div class="beat-row-actions" style="margin-top:8px">
+              <button onclick="toggleBeatPrivate('${id}', ${beat.isPrivate ? 'false' : 'true'})" style="width:100%;background:${beat.isPrivate ? 'linear-gradient(135deg,#3dd68c,#1eae66)' : 'linear-gradient(135deg,#ff8c6b,#e2543a)'};color:#000;border:none;font-weight:700;">${beat.isPrivate ? '🔓 Make Public' : '🔒 Make Private'}</button>
             </div>
           </div>
         `;
@@ -744,7 +748,14 @@
         `;
         list.appendChild(div);
       });
-      document.getElementById('statOrders').textContent = orders.length + (pendingCount ? ` (${pendingCount} pending)` : '');
+      document.getElementById('statOrders').textContent = orders.length;
+      const pendingLabel = document.getElementById('statOrdersPending');
+      if(pendingCount){
+        pendingLabel.textContent = `${pendingCount} pending`;
+        pendingLabel.style.display = 'block';
+      } else {
+        pendingLabel.style.display = 'none';
+      }
       document.getElementById('statEarnings').textContent = '₹'+totalEarnings;
     });
   }
@@ -752,6 +763,15 @@
   window.markOrderPaid = function(id){
     if(!confirm('Confirm payment received for this order?')) return;
     update(ref(db, 'orders/'+id), { status: 'paid', paidAt: Date.now() });
+    // Auto-hide the beat from the store since it's exclusive and now sold
+    const order = (window.__allOrders || {})[id];
+    if(order && order.beatId){
+      update(ref(db, 'beats/'+order.beatId), { isPrivate: true });
+    }
+  }
+
+  window.toggleBeatPrivate = function(id, makePrivate){
+    update(ref(db, 'beats/'+id), { isPrivate: makePrivate });
   }
 
   window.deleteOrder = function(id){
