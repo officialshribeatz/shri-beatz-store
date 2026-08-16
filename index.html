@@ -713,13 +713,13 @@
     .beat-card.dimmed .cover-wrap{
       position:relative;
       width:100%;
-      height:220px;
+      height:240px;
       border-radius:0;
     }
     .beat-card.dimmed .beat-cover,
     .beat-card.dimmed .beat-cover-placeholder{
       width:100%;
-      height:220px;
+      height:240px;
       border-radius:0;
       box-shadow:none;
     }
@@ -727,7 +727,7 @@
       content:'';
       position:absolute;
       inset:0;
-      background:linear-gradient(180deg, transparent 40%, rgba(10,10,10,0.95) 100%);
+      background:linear-gradient(180deg, transparent 30%, rgba(10,10,10,0.97) 90%);
     }
     .beat-card.dimmed .list-play-btn{
       position:absolute !important;
@@ -740,7 +740,7 @@
       position:absolute;
       left:14px;
       right:14px;
-      bottom:12px;
+      bottom:14px;
       z-index:2;
       gap:2px;
     }
@@ -765,8 +765,14 @@
     .beat-card.dimmed .cart-buy-btn{
       flex:1;
       justify-content:center;
-      padding:10px;
-      font-size:13px;
+      padding:10px 8px;
+      font-size:12px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      display:flex;
+      align-items:center;
+      gap:4px;
     }
     .beat-card.dimmed:hover{
       transform:translateY(-3px);
