@@ -157,6 +157,12 @@
   #loginBox .sub{color:var(--muted);font-size:12.5px;margin-bottom:24px;}
   .msg{font-size:12px;color:var(--muted);margin-top:10px;text-align:center;}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+  (function(){
+    emailjs.init('7RB-WLO7yHtxSOOXi');
+  })();
+</script>
 </head>
 <body>
 
@@ -875,6 +881,22 @@
     const order = (window.__allOrders || {})[id];
     if(order && order.beatId){
       update(ref(db, 'beats/'+order.beatId), { isPrivate: true });
+    }
+    // Send order confirmation email to buyer
+    if(order && order.buyerEmail){
+      const orderDate = new Date(order.createdAt || Date.now()).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+      emailjs.send('service_wevb6lj', 'template_usf040p', {
+        customer_name: order.buyerName || 'Customer',
+        customer_email: order.buyerEmail,
+        beat_name: order.beatName || '',
+        amount: order.price || '',
+        order_id: order.orderId || id,
+        order_date: orderDate
+      }).then(function(response){
+        console.log('Confirmation email sent!', response.status);
+      }).catch(function(error){
+        console.error('Confirmation email failed:', error);
+      });
     }
   }
 
