@@ -785,6 +785,11 @@
           <div class="next-step-item">🔍 We verify it against our records</div>
           <div class="next-step-item">📩 Once confirmed, WAV + Trackout stems are sent to your WhatsApp/Email within 24 hours</div>
         </div>
+        <div class="field" style="margin-top:14px;text-align:left">
+          <label>UPI Transaction ID / UTR (optional)</label>
+          <input type="text" id="utrInput" placeholder="e.g. 402715xxxxxx" oninput="saveUtrToOrder()">
+          <div style="font-size:10.5px;color:var(--muted);margin-top:4px">💡 Found in your payment app under "Transaction History" — look for "UTR" or "Txn ID". Skip if you can't find it.</div>
+        </div>
         <a href="https://wa.me/919137471587" target="_blank" class="whatsapp-support-btn" id="waConfirmBtn">📤 Upload/Send Payment Screenshot on WhatsApp</a>
         <div class="modal-actions">
           <button class="pay-btn" style="flex:1" onclick="closeModal()">Done</button>
@@ -1144,6 +1149,7 @@
     document.getElementById('buyerCountry').value='';
     document.getElementById('buyerState').value='';
     document.getElementById('buyerCity').value='';
+    document.getElementById('utrInput').value='';
     document.getElementById('formStep').style.display='block';
     document.getElementById('payStep').style.display='none';
     document.getElementById('qrSubStep').style.display='block';
@@ -1404,6 +1410,7 @@
       update(ref(db, 'orders/'+currentOrderId), { status: 'awaiting_confirmation', markedPaidAt: Date.now() });
       document.getElementById('confirmBeatName').textContent = currentBeat.name;
       document.getElementById('confirmOrderId').textContent = currentOrderId;
+      document.getElementById('utrInput').value = '';
       fetch('https://ntfy.sh/shribeatz-orders-sk2001', {
         method: 'POST',
         headers: { 'Title': 'Buyer marked payment done!', 'Priority': 'high', 'Tags': 'eyes' },
@@ -1412,6 +1419,17 @@
     }
     document.getElementById('qrSubStep').style.display='none';
     document.getElementById('confirmedSubStep').style.display='block';
+  }
+
+  let utrSaveTimeout = null;
+  window.saveUtrToOrder = function(){
+    const utr = document.getElementById('utrInput').value.trim();
+    if(!currentOrderId) return;
+    if(utrSaveTimeout) clearTimeout(utrSaveTimeout);
+    // Debounce so we don't write to Firebase on every keystroke
+    utrSaveTimeout = setTimeout(function(){
+      update(ref(db, 'orders/'+currentOrderId), { utr: utr });
+    }, 800);
   }
 </script>
 </body>
