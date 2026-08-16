@@ -519,6 +519,8 @@
     z-index:100;
     align-items:flex-end;
     justify-content:center;
+    overflow-y:auto;
+    padding:0;
   }
   .overlay.active{display:flex;}
   .modal{
@@ -528,6 +530,12 @@
     border-radius:18px 18px 0 0;
     padding:24px 20px 30px;
     animation:slideUp 0.25s ease;
+    max-height:100vh;
+    overflow-y:auto;
+  }
+  @media (min-width:640px){
+    .overlay{ align-items:center; padding:24px; }
+    .modal{ border-radius:18px; max-height:88vh; }
   }
   @keyframes slideUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
   .modal h3{margin-bottom:14px;font-size:17px;}
@@ -660,8 +668,17 @@
     font-size:9px;
     font-weight:600;
   }
-  .contact-btn:active{transform:scale(0.97);}
+  .contact-btn:active{transform:scale(0.97);}  @media (min-width:900px){
+    header{ padding:22px 40px; }
+    .trust-strip{ padding:14px 40px; gap:14px; }
+    .trust-chip{ font-size:12px; padding:6px 14px; }
+    .container{ max-width:760px; padding:24px 40px; }
+    .contact-section{ max-width:760px; padding:10px 40px; }
+    .search-wrap input{ padding:15px 18px; font-size:14.5px; }
+    body{ background-attachment:fixed; }
+  }
 </style>
+<script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
 </head>
 
 <body>
@@ -1336,7 +1353,12 @@
     }
   }
 
-  const UPI_ID = "9594881210@kotakbank";
+  // ===== Payment mode switch =====
+  // 'cashfree' = automatic card/UPI/netbanking via Cashfree (live now)
+  // 'upi'      = old manual UPI QR + "I've Paid" + admin verification flow (kept in code, disabled)
+  const PAYMENT_MODE = 'upi';
+
+  const UPI_ID = "bangaleshrikant31@ybl";
   const UPI_PAYEE_NAME = "Shri Beatz";
   let currentOrderId = null;
   const DUPLICATE_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
@@ -1442,7 +1464,59 @@
       body: `${currentBeat.name} - ₹${currentBeat.price}\nOrder: ${orderId}\nBuyer: ${name} | ${phone}`
     }).catch(()=>{});
 
-    showPayScreen(orderId);
+    if(PAYMENT_MODE === 'cashfree'){
+      startCashfreeCheckout(orderId, currentBeat.price, name, email, phone);
+    } else {
+      // UPI manual-verification flow (kept in code, disabled by default — see PAYMENT_MODE above)
+      showPayScreen(orderId);
+    }
+  }
+
+  // ===== Cashfree checkout =====
+  function startCashfreeCheckout(orderId, amount, buyerName, buyerEmail, buyerPhone){
+    document.getElementById('formStep').style.display='none';
+    document.getElementById('payStep').style.display='block';
+    document.getElementById('qrSubStep').innerHTML = `
+      <div style="text-align:center;padding:30px 10px">
+        <div style="font-size:14px;color:var(--muted)">⏳ Opening secure payment window...</div>
+      </div>`;
+
+    fetch('/.netlify/functions/create-cashfree-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        orderId, amount, buyerName, buyerEmail, buyerPhone,
+        returnUrl: window.location.origin + window.location.pathname + '?cf_order=' + orderId
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if(!data.payment_session_id){
+        document.getElementById('qrSubStep').innerHTML = `<div style="text-align:center;padding:20px;color:#ff6b6b">⚠️ Could not start payment. Please try again or contact us on WhatsApp.</div>`;
+        return;
+      }
+      const cashfree = Cashfree({ mode: "production" });
+      cashfree.checkout({
+        paymentSessionId: data.payment_session_id,
+        redirectTarget: "_modal"
+      }).then((result) => {
+        if(result.error){
+          document.getElementById('qrSubStep').innerHTML = `<div style="text-align:center;padding:20px;color:#ff6b6b">⚠️ Payment was not completed. Please try again.</div>`;
+        }
+        if(result.paymentDetails){
+          // Payment completed — Cashfree webhook/return will confirm server-side status;
+          // here we optimistically move the buyer forward to the confirmation screen.
+          update(ref(db, 'orders/'+orderId), { status: 'awaiting_confirmation', markedPaidAt: Date.now() });
+          document.getElementById('confirmBeatName').textContent = currentBeat.name;
+          document.getElementById('confirmOrderId').textContent = orderId;
+          document.getElementById('qrSubStep').style.display='none';
+          document.getElementById('confirmedSubStep').style.display='block';
+        }
+      });
+    })
+    .catch(() => {
+      document.getElementById('qrSubStep').innerHTML = `<div style="text-align:center;padding:20px;color:#ff6b6b">⚠️ Could not start payment. Please try again or contact us on WhatsApp.</div>`;
+    });
   }
 
   window.showThankYouStep = function(){
