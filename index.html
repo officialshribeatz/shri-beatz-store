@@ -894,6 +894,7 @@
       beats.forEach(([id, beat])=>{
         const card = document.createElement('div');
         card.className = 'beat-card';
+        const finalPrice = beat.discount ? Math.round(beat.price * (1 - beat.discount/100)) : beat.price;
         const isHighlighted = highlightSlug && slugify(beat.name) === highlightSlug;
         const isOriginalLink = originalLinkSlug && slugify(beat.name) === originalLinkSlug;
         if(isHighlighted){
@@ -948,8 +949,8 @@
                 ${beat.key ? `<div class="beat-detail-row"><span class="label">Key</span><span class="value">${beat.key}</span></div>` : ''}
               </div>
               <div class="mini-footer">
-                <button class="cart-buy-btn" onclick='openModal("${id}", ${JSON.stringify(beat.name)}, ${beat.price})'>
-                  Buy Now ₹${beat.price}
+                <button class="cart-buy-btn" onclick='openModal("${id}", ${JSON.stringify(beat.name)}, ${finalPrice})'>
+                  Buy Now ₹${finalPrice}
                 </button>
               </div>
             </div>
@@ -973,10 +974,10 @@
           <audio preload="none" src="beats/${beat.file}"></audio>
           <div class="beat-footer">
             <div>
-              <div class="price">₹${beat.price}</div>
+              <div class="price">${beat.discount ? `<span style="text-decoration:line-through;opacity:0.5;font-size:14px;font-weight:600;margin-right:6px">₹${beat.price}</span>₹${finalPrice} <span style="background:linear-gradient(135deg,#3dd68c,#1eae66);color:#000;font-size:10px;font-weight:800;padding:2px 8px;border-radius:10px;vertical-align:middle">${beat.discount}% OFF</span>` : `₹${beat.price}`}</div>
               <div class="urgency-line">🔥 Sold once, gone forever</div>
             </div>
-            <button class="buy-btn" onclick='openModal("${id}", ${JSON.stringify(beat.name)}, ${beat.price})'>Buy Now</button>
+            <button class="buy-btn" onclick='openModal("${id}", ${JSON.stringify(beat.name)}, ${finalPrice})'>Buy Now</button>
           </div>
         `;
         const audioEl = card.querySelector('audio');

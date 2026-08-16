@@ -271,6 +271,10 @@
         <input type="number" id="beatPrice" placeholder="50">
       </div>
       <div class="field">
+        <label>Discount (%) — optional, leave blank for no discount</label>
+        <input type="number" id="beatDiscount" placeholder="e.g. 20" min="0" max="100">
+      </div>
+      <div class="field">
         <label>Preview Audio Filename (upload mp3 to /beats/ folder on GitHub first, then type exact filename here)</label>
         <input type="text" id="beatFile" placeholder="e.g. mybeat.mp3">
       </div>
@@ -349,6 +353,8 @@
     const bpmVal = document.getElementById('beatBpm').value.trim();
     const bpm = bpmVal ? parseInt(bpmVal) : null;
     const price = parseInt(document.getElementById('beatPrice').value);
+    const discountVal = document.getElementById('beatDiscount').value.trim();
+    const discount = discountVal ? parseInt(discountVal) : null;
     const file = document.getElementById('beatFile').value.trim();
     const cover = document.getElementById('beatCover').value.trim();
     if(!name || !price || !file){
@@ -363,6 +369,7 @@
       createdAt: Date.now()
     };
     if(bpm) beatData.bpm = bpm;
+    if(discount) beatData.discount = discount;
     set(beatRef, beatData).then(()=>{
       document.getElementById('addMsg').textContent = '✅ Beat added!';
       document.getElementById('beatName').value='';
@@ -370,6 +377,7 @@
       document.getElementById('beatKey').value='';
       document.getElementById('beatBpm').value='';
       document.getElementById('beatPrice').value='';
+      document.getElementById('beatDiscount').value='';
       document.getElementById('beatFile').value='';
       document.getElementById('beatCover').value='';
     });
@@ -412,7 +420,7 @@
             <div class="beat-summary-clickable" onclick="toggleBeatRow('${id}')">
               <div class="beat-summary-info">
                 <div class="beat-summary-name">${beat.name||'Untitled'} ${beat.isPrivate ? '<span style="background:#2a1414;color:#ff6b6b;border:1px solid #4a2020;font-size:9.5px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:6px;">🔒 PRIVATE</span>' : ''}</div>
-                <div class="beat-summary-meta">₹${beat.price||0} · 🎧 ${beat.plays||0} plays${beat.genre ? ' · '+beat.genre : ''}</div>
+                <div class="beat-summary-meta">${beat.discount ? `<s style="opacity:0.6">₹${beat.price||0}</s> ₹${Math.round((beat.price||0) * (1 - beat.discount/100))} <span style="color:#7ee787;font-weight:700">(${beat.discount}% OFF)</span>` : `₹${beat.price||0}`} · 🎧 ${beat.plays||0} plays${beat.genre ? ' · '+beat.genre : ''}</div>
               </div>
               <span class="chevron" id="chevron-${id}">⌄</span>
             </div>
@@ -442,6 +450,10 @@
               <div>
                 <label>Price (₹)</label>
                 <input type="number" id="price-${id}" value="${beat.price||''}">
+              </div>
+              <div>
+                <label>Discount (%)</label>
+                <input type="number" id="discount-${id}" value="${beat.discount||''}" min="0" max="100" placeholder="none">
               </div>
             </div>
             <div class="beat-row-actions">
@@ -477,6 +489,7 @@
     const bpmVal = document.getElementById('bpm-'+id).value.trim();
     const cover = document.getElementById('cover-'+id).value.trim();
     const priceVal = document.getElementById('price-'+id).value;
+    const discountVal = document.getElementById('discount-'+id).value.trim();
     const updates = {};
     if(name) updates.name = name;
     if(genre) updates.genre = genre;
@@ -484,6 +497,8 @@
     if(bpmVal) updates.bpm = parseInt(bpmVal);
     if(cover) updates.cover = cover;
     if(priceVal && parseInt(priceVal) > 0) updates.price = parseInt(priceVal);
+    // Discount: a number saves it, an empty field clears any existing discount
+    updates.discount = discountVal ? parseInt(discountVal) : null;
     if(Object.keys(updates).length === 0){
       alert('Nothing to update.');
       return;
