@@ -744,8 +744,9 @@
     </div>
     <div id="payStep" style="display:none">
       <div class="success-box" id="qrSubStep">
-        <h3 style="margin-bottom:14px">Scan &amp; Pay ₹<span id="upiAmount"></span></h3>
-        <div id="qrCodeBox" style="display:flex;justify-content:center;margin-bottom:14px"></div>
+        <h3 style="margin-bottom:6px">Scan &amp; Pay ₹<span id="upiAmount"></span></h3>
+        <div id="paymentWindowTimer" style="display:none;text-align:center;font-size:12.5px;color:#ffb44d;font-weight:700;margin-bottom:14px">⏱️ Complete payment in <span id="paymentWindowNum">5:00</span></div>
+        <div id="qrCodeBox" style="display:flex;justify-content:center;margin-bottom:14px;position:relative"></div>
         <a id="upiIntentBtn" href="#" class="whatsapp-support-btn" style="background:#2a1c1c;border-color:#4a2a2a;color:#ff9d4d;display:flex;align-items:center;justify-content:center;gap:6px">
           📱 Pay with GPay / PhonePe / Paytm
         </a>
@@ -811,6 +812,7 @@
   let countdownTimer = null;
   let countdownDelayTimer = null;
   let troubleFallbackTimer = null;
+  let paymentWindowTimer = null;
   const container = document.getElementById('beatsList');
 
   const beatsRef = ref(db, 'beats');
@@ -1149,10 +1151,12 @@
     if(countdownTimer) clearInterval(countdownTimer);
     if(countdownDelayTimer) clearTimeout(countdownDelayTimer);
     if(troubleFallbackTimer) clearTimeout(troubleFallbackTimer);
+    if(paymentWindowTimer) clearInterval(paymentWindowTimer);
     const btn = document.getElementById('ivePaidBtn');
     const hint = document.getElementById('ivePaidHint');
     const countdownBox = document.getElementById('verifyingCountdown');
     const fallback = document.getElementById('troubleFallbackLink');
+    const windowTimerEl = document.getElementById('paymentWindowTimer');
     if(btn){
       btn.disabled = true;
       btn.style.opacity = '0.4';
@@ -1161,6 +1165,7 @@
     if(hint) hint.style.display = 'block';
     if(countdownBox) countdownBox.style.display = 'none';
     if(fallback) fallback.style.display = 'none';
+    if(windowTimerEl) windowTimerEl.style.display = 'none';
   }
 
   function enableIvePaid(){
@@ -1178,6 +1183,12 @@
     const countdownNum = document.getElementById('countdownNum');
     if(hint) hint.style.display = 'none';
     if(countdownBox) countdownBox.style.display = 'block';
+
+    // Stop the "Complete payment in X:XX" timer — no longer relevant once we're verifying
+    if(paymentWindowTimer) clearInterval(paymentWindowTimer);
+    const windowTimerEl = document.getElementById('paymentWindowTimer');
+    if(windowTimerEl) windowTimerEl.style.display = 'none';
+
     let secondsLeft = 15;
     if(countdownNum) countdownNum.textContent = secondsLeft;
     if(countdownTimer) clearInterval(countdownTimer);
@@ -1220,6 +1231,37 @@
 
   // Ultimate fallback: if nothing triggered after 45s of the pay screen being open,
   // show a manual "having trouble" link so a genuine buyer never gets stuck.
+  window.revealQr = function(){
+    const img = document.getElementById('qrImg');
+    if(img) img.style.filter = 'none';
+    const btn = event.target;
+    if(btn) btn.style.display = 'none';
+    scheduleTroubleFallback();
+    startPaymentWindowTimer();
+  }
+
+  function startPaymentWindowTimer(){
+    let secondsLeft = 5 * 60; // 5 minutes
+    const numEl = document.getElementById('paymentWindowNum');
+    const wrapEl = document.getElementById('paymentWindowTimer');
+    if(wrapEl) wrapEl.style.display = 'block';
+    if(paymentWindowTimer) clearInterval(paymentWindowTimer);
+    function render(){
+      const m = Math.floor(secondsLeft/60);
+      const s = secondsLeft%60;
+      if(numEl) numEl.textContent = m+':'+(s<10?'0':'')+s;
+    }
+    render();
+    paymentWindowTimer = setInterval(function(){
+      secondsLeft--;
+      render();
+      if(secondsLeft <= 0){
+        clearInterval(paymentWindowTimer);
+        if(wrapEl) wrapEl.innerHTML = '⚠️ QR expired — tap Close and try again';
+      }
+    }, 1000);
+  }
+
   function scheduleTroubleFallback(){
     if(troubleFallbackTimer) clearTimeout(troubleFallbackTimer);
     troubleFallbackTimer = setTimeout(function(){
@@ -1262,11 +1304,14 @@
     document.getElementById('payBeatName').textContent = currentBeat.name;
     document.getElementById('payOrderId').textContent = orderId;
     document.getElementById('upiIntentBtn').href = upiLink;
-    document.getElementById('qrCodeBox').innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(upiLink)}" width="140" height="140" style="border-radius:10px;background:#fff;padding:6px" alt="Scan to Pay">`;
+    document.getElementById('qrCodeBox').innerHTML = `
+      <div style="position:relative;display:inline-block">
+        <img id="qrImg" src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(upiLink)}" width="140" height="140" style="border-radius:10px;background:#fff;padding:6px;filter:blur(10px);transition:filter 0.2s" alt="Scan to Pay">
+        <button onclick="revealQr()" style="position:absolute;inset:0;width:100%;height:100%;background:rgba(0,0,0,0.45);border:none;border-radius:10px;color:#fff;font-weight:800;font-size:13px;cursor:pointer;">👁️ Show QR</button>
+      </div>`;
 
     const waMsg = encodeURIComponent(`Hi, I paid ₹${currentBeat.price} for "${currentBeat.name}" (Order: ${orderId}). Sharing my payment screenshot.`);
     document.getElementById('waConfirmBtn').href = `https://wa.me/919137471587?text=${waMsg}`;
-    scheduleTroubleFallback();
   }
 
   window.proceedToPay = function(){
