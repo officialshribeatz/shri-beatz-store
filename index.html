@@ -790,12 +790,11 @@
           <input type="text" id="utrInput" placeholder="e.g. 402715xxxxxx" oninput="saveUtrToOrder()">
           <div style="font-size:10.5px;color:var(--muted);margin-top:4px">💡 Found in your payment app under "Transaction History" — look for "UTR" or "Txn ID". Skip if you can't find it.</div>
         </div>
-        <div class="field" style="margin-top:10px;text-align:left">
-          <label>📤 Upload Payment Screenshot</label>
-          <input type="file" id="screenshotInput" accept="image/*" onchange="uploadScreenshot()" style="padding:10px;font-size:12.5px">
-          <div id="screenshotUploadStatus" style="font-size:11px;color:var(--muted);margin-top:4px">Just pick your screenshot — we'll take it from there.</div>
+        <div style="background:#1c2b1c;border:1px solid #2a4a2a;border-radius:12px;padding:12px 14px;margin-top:14px;text-align:left">
+          <div style="font-size:12.5px;color:#7ee787;font-weight:800;margin-bottom:4px">📤 Send Screenshot on WhatsApp</div>
+          <div style="font-size:12px;color:#c8e8c8;line-height:1.5">Tap below and send your payment screenshot on WhatsApp — we'll verify and deliver your beat within 24 hours.</div>
         </div>
-        <a href="https://wa.me/919137471587" target="_blank" class="whatsapp-support-btn" id="waConfirmBtn" style="display:none">Contact on WhatsApp</a>
+        <a href="https://wa.me/919137471587" target="_blank" class="whatsapp-support-btn" id="waConfirmBtn" style="display:block;margin-top:12px">💬 Send Screenshot on WhatsApp</a>
         <div class="modal-actions">
           <button class="pay-btn" style="flex:1" onclick="showThankYouStep()">Done</button>
         </div>
@@ -1179,8 +1178,6 @@
     document.getElementById('buyerState').value='';
     document.getElementById('buyerCity').value='';
     document.getElementById('utrInput').value='';
-    document.getElementById('screenshotUploadStatus').textContent='';
-    document.getElementById('waConfirmBtn').style.display='none';
     document.getElementById('formStep').style.display='block';
     document.getElementById('payStep').style.display='none';
     document.getElementById('qrSubStep').style.display='block';
@@ -1496,46 +1493,6 @@
     }, 800);
   }
 
-  window.uploadScreenshot = function(){
-    const fileInput = document.getElementById('screenshotInput');
-    const statusEl = document.getElementById('screenshotUploadStatus');
-    const file = fileInput.files[0];
-    if(!file || !currentOrderId) return;
-
-    if(!file.type.startsWith('image/')){
-      statusEl.textContent = '⚠️ Please select an image file.';
-      statusEl.style.color = '#ff6b6b';
-      return;
-    }
-    if(file.size > 8 * 1024 * 1024){
-      statusEl.textContent = '⚠️ Image too large (max 8MB).';
-      statusEl.style.color = '#ff6b6b';
-      return;
-    }
-
-    statusEl.textContent = '⏳ Uploading...';
-    statusEl.style.color = 'var(--muted)';
-
-    const fileRef = storageRef(storage, `payment-screenshots/${currentOrderId}.jpg`);
-    uploadBytes(fileRef, file).then(() => {
-      return getDownloadURL(fileRef);
-    }).then((url) => {
-      update(ref(db, 'orders/'+currentOrderId), { screenshotUrl: url });
-      statusEl.textContent = '✅ Screenshot uploaded! We\'ll verify it shortly.';
-      statusEl.style.color = '#7ee787';
-      // Let the seller know instantly a screenshot is in
-      fetch('https://ntfy.sh/shribeatz-orders-sk2001', {
-        method: 'POST',
-        headers: { 'Title': 'Screenshot uploaded!', 'Priority': 'high', 'Tags': 'camera' },
-        body: `Order ${currentOrderId} - screenshot uploaded, ready to verify.\n${url}`
-      }).catch(()=>{});
-    }).catch((err) => {
-      statusEl.textContent = '⚠️ Upload failed — tap "Contact on WhatsApp" below to send it there instead.';
-      statusEl.style.color = '#ff6b6b';
-      const waBtn = document.getElementById('waConfirmBtn');
-      if(waBtn) waBtn.style.display = 'block';
-    });
-  }
 </script>
 </body>
 </html>
