@@ -8,10 +8,6 @@
 <link rel="icon" href="admin-logo.png">
 <link rel="apple-touch-icon" href="admin-logo.png">
 <meta name="theme-color" content="#0a0a0a">
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-<script>
-  emailjs.init({ publicKey: "7RB-WLO7yHtxSOOXi" });
-</script>
 <style>
   :root{
     --bg:#0a0a0a;--bg2:#0f0f0f;--card:#161616;--card2:#1b1b1b;--orange:#ff8c1a;--orange-dim:#ffa63d;
@@ -234,7 +230,7 @@
         <div class="detail-row"><span class="detail-label">Period</span><span class="detail-value" id="repPeriod"></span></div>
         <div class="detail-row"><span class="detail-label">Orders</span><span class="detail-value" id="repOrders"></span></div>
         <div class="detail-row"><span class="detail-label">Gross Sales</span><span class="detail-value" id="repGross"></span></div>
-        <div class="detail-row"><span class="detail-label">Razorpay Fees (2.36%)</span><span class="detail-value" id="repFees"></span></div>
+        <div class="detail-row"><span class="detail-label">Gateway Fees</span><span class="detail-value" id="repFees"></span></div>
         <div class="detail-row"><span class="detail-label" style="color:var(--green);font-weight:700;">Net Earnings</span><span class="detail-value" id="repNet" style="color:var(--green);font-size:15px;"></span></div>
         <button class="secondary" style="margin-top:12px;" onclick="downloadReportCSV()">⬇️ Download as CSV</button>
       </div>
@@ -245,8 +241,31 @@
       <h2 style="margin:0;border:none;flex:1;">📦 Orders</h2>
       <span class="chevron" id="ordersChevron">⌄</span>
     </div>
-    <div class="card" id="ordersList" style="display:none">
-      <div class="msg">Loading...</div>
+    <div id="ordersList" style="display:none">
+      <div class="collapsible-header" onclick="togglePendingOrders()" style="padding:10px 14px;background:#1a1408;border-radius:12px;margin-bottom:8px">
+        <h2 style="margin:0;border:none;flex:1;font-size:14px;color:#ffb44d">⏳ Pending / Awaiting (<span id="pendingOrdersCount">0</span>)</h2>
+        <span class="chevron" id="pendingOrdersChevron">⌄</span>
+      </div>
+      <div class="card" id="pendingOrdersList" style="display:block;margin-bottom:14px">
+        <div class="msg">Loading...</div>
+      </div>
+
+      <div class="collapsible-header" onclick="togglePaidOrders()" style="padding:10px 14px;background:#0f1a10;border-radius:12px;margin-bottom:8px">
+        <h2 style="margin:0;border:none;flex:1;font-size:14px;color:#7ee787">✅ Paid (<span id="paidOrdersCount">0</span>)</h2>
+        <span class="chevron" id="paidOrdersChevron">⌄</span>
+      </div>
+      <div class="card" id="paidOrdersList" style="display:none">
+        <div class="msg">Loading...</div>
+      </div>
+    </div>
+
+    <div class="collapsible-header" onclick="toggleArchivedSection()">
+      <h2 style="margin:0;border:none;flex:1;font-size:14px;color:var(--muted)">🗄️ Archived Orders (<span id="archivedCount">0</span>)</h2>
+      <span class="chevron">⌄</span>
+    </div>
+    <div class="card" id="archivedOrdersPanel" style="display:none">
+      <div id="archivedOrdersList"><div class="msg">Loading...</div></div>
+      <button onclick="permanentlyDeleteOldArchived()" style="width:100%;margin-top:10px;padding:11px;border-radius:12px;background:#2a1414;color:#ff6b6b;border:1px solid #4a2020;font-weight:700;font-size:12.5px;cursor:pointer;">🗑️ Permanently Delete Archived Orders (90+ days old)</button>
     </div>
 
     <div class="collapsible-header" onclick="toggleAddBeat()">
@@ -298,7 +317,20 @@
       <div class="field">
         <input type="text" id="adminSearch" placeholder="🔍 Search beats...">
       </div>
-      <div class="card" id="beatsList">
+
+      <div class="collapsible-header" onclick="toggleLiveBeats()" style="padding:10px 14px;background:#0f1a10;border-radius:12px;margin-bottom:8px">
+        <h2 style="margin:0;border:none;flex:1;font-size:14px;color:#7ee787">🟢 Live Beats (<span id="liveBeatsCount">0</span>)</h2>
+        <span class="chevron" id="liveBeatsChevron">⌄</span>
+      </div>
+      <div class="card" id="liveBeatsList" style="display:block;margin-bottom:14px">
+        <div class="msg">Loading...</div>
+      </div>
+
+      <div class="collapsible-header" onclick="togglePrivateBeats()" style="padding:10px 14px;background:#1a1414;border-radius:12px;margin-bottom:8px">
+        <h2 style="margin:0;border:none;flex:1;font-size:14px;color:#ff8c6b">💰 Sold Beats (<span id="privateBeatsCount">0</span>)</h2>
+        <span class="chevron" id="privateBeatsChevron">⌄</span>
+      </div>
+      <div class="card" id="privateBeatsList" style="display:none">
         <div class="msg">Loading...</div>
       </div>
     </div>
@@ -387,15 +419,76 @@
     });
   }
 
+  function buildBeatRowHtml(id, beat){
+    return `
+      <div class="beat-summary">
+        <div class="move-btns">
+          <button onclick="event.stopPropagation();moveBeat('${id}','up')" title="Move up">▲</button>
+          <button onclick="event.stopPropagation();moveBeat('${id}','down')" title="Move down">▼</button>
+        </div>
+        <div class="beat-summary-clickable" onclick="toggleBeatRow('${id}')">
+          <div class="beat-summary-info">
+            <div class="beat-summary-name">${beat.name||'Untitled'} ${beat.isPrivate ? '<span style="background:#2a1414;color:#ff6b6b;border:1px solid #4a2020;font-size:9.5px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:6px;">💰 SOLD</span>' : ''}</div>
+            <div class="beat-summary-meta">${beat.discount ? `<s style="opacity:0.6">₹${beat.price||0}</s> ₹${Math.round((beat.price||0) * (1 - beat.discount/100))} <span style="color:#7ee787;font-weight:700">(${beat.discount}% OFF)</span>` : `₹${beat.price||0}`} · 🎧 ${beat.plays||0} plays${beat.genre ? ' · '+beat.genre : ''}</div>
+          </div>
+          <span class="chevron" id="chevron-${id}">⌄</span>
+        </div>
+      </div>
+      <div class="beat-edit-panel" id="panel-${id}" style="display:none">
+        <div class="beat-edit-grid">
+          <div class="full">
+            <label>Beat Name</label>
+            <input type="text" id="name-${id}" value="${beat.name||''}">
+          </div>
+          <div>
+            <label>Genre</label>
+            <input type="text" id="genre-${id}" value="${beat.genre||''}">
+          </div>
+          <div>
+            <label>Key</label>
+            <input type="text" id="key-${id}" value="${beat.key||''}">
+          </div>
+          <div>
+            <label>BPM</label>
+            <input type="number" id="bpm-${id}" value="${beat.bpm||''}">
+          </div>
+          <div>
+            <label>Cover File</label>
+            <input type="text" id="cover-${id}" value="${beat.cover||''}">
+          </div>
+          <div>
+            <label>Price (₹)</label>
+            <input type="number" id="price-${id}" value="${beat.price||''}">
+          </div>
+          <div>
+            <label>Discount (%)</label>
+            <input type="number" id="discount-${id}" value="${beat.discount||''}" min="0" max="100" placeholder="none">
+          </div>
+        </div>
+        <div class="beat-row-actions">
+          <button class="link-btn" onclick='copyBeatLink("${id}", ${JSON.stringify(beat.name||"")})'>🔗 Copy Link</button>
+          <button class="edit-btn" onclick="updateBeat('${id}')">Save Changes</button>
+          <button class="del-btn" onclick='deleteBeat("${id}", ${JSON.stringify(beat.name||"this beat")})'>Delete</button>
+        </div>
+        <div class="beat-row-actions" style="margin-top:8px">
+          <button onclick="toggleBeatPrivate('${id}', ${beat.isPrivate ? 'false' : 'true'})" style="width:100%;background:${beat.isPrivate ? 'linear-gradient(135deg,#3dd68c,#1eae66)' : 'linear-gradient(135deg,#ff8c6b,#e2543a)'};color:#000;border:none;font-weight:700;">${beat.isPrivate ? '↩️ Relist (Make Live)' : '💰 Mark as Sold'}</button>
+        </div>
+      </div>
+    `;
+  }
+
   function loadBeats(){
     onValue(ref(db, 'beats'), (snapshot)=>{
       const data = snapshot.val();
-      const list = document.getElementById('beatsList');
-      list.innerHTML='';
+      const liveList = document.getElementById('liveBeatsList');
+      const privateList = document.getElementById('privateBeatsList');
       if(!data){
-        list.innerHTML = '<div class="msg">No beats yet.</div>';
+        liveList.innerHTML = '<div class="msg">No beats yet.</div>';
+        privateList.innerHTML = '<div class="msg">No private beats.</div>';
         document.getElementById('statBeats').textContent = '0';
         document.getElementById('statPlays').textContent = '0';
+        document.getElementById('liveBeatsCount').textContent = '0';
+        document.getElementById('privateBeatsCount').textContent = '0';
         return;
       }
       let totalPlays = 0;
@@ -410,68 +503,31 @@
       window.__sortedBeatIds = sortedEntries.map(e=>e[0]);
       const maxOrder = sortedEntries.reduce((m,[,b])=> typeof b.order==='number' ? Math.max(m,b.order) : m, -1);
       window.__nextOrder = maxOrder + 1;
+
+      liveList.innerHTML = '';
+      privateList.innerHTML = '';
+      let liveCount = 0, privateCount = 0;
+
       sortedEntries.forEach(([id, beat])=>{
         totalPlays += (beat.plays||0);
         const row = document.createElement('div');
         row.className='beat-row-main';
         row.dataset.search = `${beat.name||''} ${beat.genre||''} ${beat.key||''}`.toLowerCase();
-        row.innerHTML = `
-          <div class="beat-summary">
-            <div class="move-btns">
-              <button onclick="event.stopPropagation();moveBeat('${id}','up')" title="Move up">▲</button>
-              <button onclick="event.stopPropagation();moveBeat('${id}','down')" title="Move down">▼</button>
-            </div>
-            <div class="beat-summary-clickable" onclick="toggleBeatRow('${id}')">
-              <div class="beat-summary-info">
-                <div class="beat-summary-name">${beat.name||'Untitled'} ${beat.isPrivate ? '<span style="background:#2a1414;color:#ff6b6b;border:1px solid #4a2020;font-size:9.5px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:6px;">🔒 PRIVATE</span>' : ''}</div>
-                <div class="beat-summary-meta">${beat.discount ? `<s style="opacity:0.6">₹${beat.price||0}</s> ₹${Math.round((beat.price||0) * (1 - beat.discount/100))} <span style="color:#7ee787;font-weight:700">(${beat.discount}% OFF)</span>` : `₹${beat.price||0}`} · 🎧 ${beat.plays||0} plays${beat.genre ? ' · '+beat.genre : ''}</div>
-              </div>
-              <span class="chevron" id="chevron-${id}">⌄</span>
-            </div>
-          </div>
-          <div class="beat-edit-panel" id="panel-${id}" style="display:none">
-            <div class="beat-edit-grid">
-              <div class="full">
-                <label>Beat Name</label>
-                <input type="text" id="name-${id}" value="${beat.name||''}">
-              </div>
-              <div>
-                <label>Genre</label>
-                <input type="text" id="genre-${id}" value="${beat.genre||''}">
-              </div>
-              <div>
-                <label>Key</label>
-                <input type="text" id="key-${id}" value="${beat.key||''}">
-              </div>
-              <div>
-                <label>BPM</label>
-                <input type="number" id="bpm-${id}" value="${beat.bpm||''}">
-              </div>
-              <div>
-                <label>Cover File</label>
-                <input type="text" id="cover-${id}" value="${beat.cover||''}">
-              </div>
-              <div>
-                <label>Price (₹)</label>
-                <input type="number" id="price-${id}" value="${beat.price||''}">
-              </div>
-              <div>
-                <label>Discount (%)</label>
-                <input type="number" id="discount-${id}" value="${beat.discount||''}" min="0" max="100" placeholder="none">
-              </div>
-            </div>
-            <div class="beat-row-actions">
-              <button class="link-btn" onclick='copyBeatLink("${id}", ${JSON.stringify(beat.name||"")})'>🔗 Copy Link</button>
-              <button class="edit-btn" onclick="updateBeat('${id}')">Save Changes</button>
-              <button class="del-btn" onclick='deleteBeat("${id}", ${JSON.stringify(beat.name||"this beat")})'>Delete</button>
-            </div>
-            <div class="beat-row-actions" style="margin-top:8px">
-              <button onclick="toggleBeatPrivate('${id}', ${beat.isPrivate ? 'false' : 'true'})" style="width:100%;background:${beat.isPrivate ? 'linear-gradient(135deg,#3dd68c,#1eae66)' : 'linear-gradient(135deg,#ff8c6b,#e2543a)'};color:#000;border:none;font-weight:700;">${beat.isPrivate ? '🔓 Make Public' : '🔒 Make Private'}</button>
-            </div>
-          </div>
-        `;
-        list.appendChild(row);
+        row.innerHTML = buildBeatRowHtml(id, beat);
+        if(beat.isPrivate){
+          privateList.appendChild(row);
+          privateCount++;
+        } else {
+          liveList.appendChild(row);
+          liveCount++;
+        }
       });
+
+      if(liveCount === 0) liveList.innerHTML = '<div class="msg">No live beats.</div>';
+      if(privateCount === 0) privateList.innerHTML = '<div class="msg">No private beats.</div>';
+
+      document.getElementById('liveBeatsCount').textContent = liveCount;
+      document.getElementById('privateBeatsCount').textContent = privateCount;
       document.getElementById('statBeats').textContent = Object.keys(data).length;
       document.getElementById('statPlays').textContent = totalPlays;
       applyAdminSearch();
@@ -480,7 +536,7 @@
 
   function applyAdminSearch(){
     const term = document.getElementById('adminSearch').value.trim().toLowerCase();
-    document.querySelectorAll('#beatsList .beat-row-main').forEach(row=>{
+    document.querySelectorAll('#liveBeatsList .beat-row-main, #privateBeatsList .beat-row-main').forEach(row=>{
       row.style.display = (!term || row.dataset.search.includes(term)) ? '' : 'none';
     });
   }
@@ -585,30 +641,30 @@
 
   function computeAndShowReport(fromTs, toTs, label){
     const allOrders = window.__allOrders || {};
-    const inRange = Object.values(allOrders).filter(o => o.createdAt >= fromTs && o.createdAt <= toTs);
+    // Only count orders that were actually verified & marked paid — excludes pending/test/unverified orders
+    const inRange = Object.values(allOrders).filter(o => o.createdAt >= fromTs && o.createdAt <= toTs && o.status === 'paid' && !o.archived);
     const gross = inRange.reduce((sum, o) => sum + (o.price||0), 0);
-    const fees = Math.round(gross * RAZORPAY_FEE_RATE * 100) / 100;
-    const net = Math.round((gross - fees) * 100) / 100;
+    // No payment gateway fee on manual UPI — net earnings equal gross sales
+    const fees = 0;
+    const net = gross;
     __lastReport = { label, count: inRange.length, gross, fees, net, orders: inRange };
 
     document.getElementById('repPeriod').textContent = label;
     document.getElementById('repOrders').textContent = inRange.length;
     document.getElementById('repGross').textContent = '₹' + gross.toFixed(2);
-    document.getElementById('repFees').textContent = '−₹' + fees.toFixed(2);
+    document.getElementById('repFees').textContent = '₹0.00 (no gateway fee on UPI)';
     document.getElementById('repNet').textContent = '₹' + net.toFixed(2);
     document.getElementById('reportResults').style.display = 'block';
   }
 
   window.downloadReportCSV = function(){
     if(!__lastReport) return;
-    let csv = 'Beat Name,Buyer,Amount,Razorpay Fee (2.36%),Net,Payment ID,Date\n';
+    let csv = 'Beat Name,Buyer,Amount,Order ID,Date\n';
     __lastReport.orders.forEach(o=>{
-      const fee = (o.price * RAZORPAY_FEE_RATE).toFixed(2);
-      const net = (o.price - fee).toFixed(2);
       const date = new Date(o.createdAt).toLocaleDateString('en-IN');
-      csv += `"${o.beatName}","${o.buyerName}",${o.price},${fee},${net},"${o.paymentId}","${date}"\n`;
+      csv += `"${o.beatName}","${o.buyerName}",${o.price},"${o.orderId||''}","${date}"\n`;
     });
-    csv += `\nTOTAL,,${__lastReport.gross.toFixed(2)},${__lastReport.fees.toFixed(2)},${__lastReport.net.toFixed(2)},,\n`;
+    csv += `\nTOTAL,,${__lastReport.gross.toFixed(2)},,\n`;
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -626,6 +682,18 @@
     const isOpen = panel.style.display !== 'none';
     panel.style.display = isOpen ? 'none' : 'block';
     chevron.textContent = isOpen ? '⌄' : '⌃';
+  }
+
+  window.toggleLiveBeats = function(){
+    const panel = document.getElementById('liveBeatsList');
+    const isOpen = panel.style.display === 'block';
+    panel.style.display = isOpen ? 'none' : 'block';
+  }
+
+  window.togglePrivateBeats = function(){
+    const panel = document.getElementById('privateBeatsList');
+    const isOpen = panel.style.display === 'block';
+    panel.style.display = isOpen ? 'none' : 'block';
   }
 
   window.toggleAddBeat = function(){
@@ -708,71 +776,90 @@
     }
   }
 
+  function buildOrderRowHtml(id, o){
+    const isPaid = o.status === 'paid';
+    const isAwaiting = o.status === 'awaiting_confirmation';
+    const date = new Date(o.createdAt).toLocaleString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    const statusBadge = isPaid
+      ? `<span style="background:#1c2b1c;color:#7ee787;border:1px solid #2a4a2a;font-size:10px;font-weight:700;padding:3px 9px;border-radius:12px;">✅ PAID</span>`
+      : isAwaiting
+      ? `<span style="background:#2b2a0f;color:#ffe066;border:1px solid #4a481a;font-size:10px;font-weight:700;padding:3px 9px;border-radius:12px;">👀 BUYER SAYS PAID</span>`
+      : `<span style="background:#2b230f;color:#ffb44d;border:1px solid #4a3a1a;font-size:10px;font-weight:700;padding:3px 9px;border-radius:12px;">⏳ PENDING</span>`;
+    const statusText = isPaid ? '✅ Paid' : isAwaiting ? '👀 Buyer says paid (unverified)' : '⏳ Pending';
+    const borderStyle = isAwaiting ? 'border:1.5px solid #ffd23d;border-radius:14px;' : (!isPaid ? 'border:1.5px solid #ff8c1a;border-radius:14px;' : '');
+    return `
+      <div class="order-row-main" style="${borderStyle}">
+        <div class="order-summary-row" onclick="toggleOrderRow('${id}')">
+          <div class="order-summary-info">
+            <div class="order-summary-name">${o.beatName} ${statusBadge}</div>
+            <div class="order-summary-meta">${o.buyerName} · ${date}</div>
+          </div>
+          <div class="order-summary-right">
+            <span class="order-summary-price">₹${o.price}</span>
+            <span class="chevron" id="order-chevron-${id}">⌄</span>
+          </div>
+        </div>
+        <div class="order-detail-panel" id="order-panel-${id}" style="display:none">
+          <div class="detail-row"><span class="detail-label">Order ID</span><span class="detail-value mono">${o.orderId || id}</span></div>
+          <div class="detail-row"><span class="detail-label">Buyer Name</span><span class="detail-value">${o.buyerName}</span></div>
+          ${o.buyerStageName ? `<div class="detail-row"><span class="detail-label">Stage Name</span><span class="detail-value">${o.buyerStageName}</span></div>` : ''}
+          <div class="detail-row"><span class="detail-label">Phone</span><span class="detail-value">${o.buyerPhone||'-'}</span></div>
+          <div class="detail-row"><span class="detail-label">Email</span><span class="detail-value">${o.buyerEmail||'-'}</span></div>
+          ${(o.buyerCity || o.buyerState || o.buyerCountry) ? `<div class="detail-row"><span class="detail-label">Location</span><span class="detail-value">${[o.buyerCity,o.buyerState,o.buyerCountry].filter(Boolean).join(', ')||'-'}</span></div>` : ''}
+          <div class="detail-row"><span class="detail-label">Amount</span><span class="detail-value">₹${o.price}</span></div>
+          ${o.utr ? `<div class="detail-row"><span class="detail-label">UTR / Txn ID</span><span class="detail-value mono" style="color:#7ee787">${o.utr}</span></div>` : ''}
+          ${o.screenshotUrl ? `<div style="margin:10px 0"><div class="detail-label" style="margin-bottom:6px">Payment Screenshot</div><a href="${o.screenshotUrl}" target="_blank"><img src="${o.screenshotUrl}" style="width:100%;max-width:220px;border-radius:10px;border:1px solid var(--border)"></a></div>` : ''}
+          <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value">${statusText}</span></div>
+          <div class="detail-row"><span class="detail-label">Date</span><span class="detail-value">${date}</span></div>
+          ${!isPaid ? `<button onclick="markOrderPaid('${id}')" style="width:100%;margin-top:10px;padding:11px;border-radius:12px;background:linear-gradient(135deg,#ffa63d,#ff8c1a);color:#000;border:none;font-weight:800;font-size:13px;cursor:pointer;">✅ Mark as Paid</button>` : ''}
+          ${o.buyerPhone ? `<a class="whatsapp-buyer-btn" href="https://wa.me/91${o.buyerPhone.replace(/\D/g,'').slice(-10)}" target="_blank">💬 WhatsApp Buyer</a>` : ''}
+          <button onclick="deleteOrder('${id}')" style="width:100%;margin-top:8px;padding:10px;border-radius:12px;background:#2a1414;color:#ff6b6b;border:1px solid #4a2020;font-weight:700;font-size:12.5px;cursor:pointer;">🗑️ Delete Order</button>
+        </div>
+      </div>`;
+  }
+
   function loadOrders(){
     onValue(ref(db, 'orders'), (snapshot)=>{
       const data = snapshot.val();
       window.__allOrders = data || {};
-      const list = document.getElementById('ordersList');
-      list.innerHTML='';
+      const archivedCountEl = document.getElementById('archivedCount');
+      if(archivedCountEl) archivedCountEl.textContent = Object.values(window.__allOrders).filter(o=>o.archived).length;
+      // If the archived panel is currently open, keep it in sync too
+      const archivedPanel = document.getElementById('archivedOrdersPanel');
+      if(archivedPanel && archivedPanel.style.display === 'block') loadArchivedOrders();
+
+      const pendingList = document.getElementById('pendingOrdersList');
+      const paidList = document.getElementById('paidOrdersList');
+
       if(!data){
-        list.innerHTML = '<div class="msg">No orders yet.</div>';
+        pendingList.innerHTML = '<div class="msg">No orders yet.</div>';
+        paidList.innerHTML = '<div class="msg">No orders yet.</div>';
         document.getElementById('statOrders').textContent = '0';
         document.getElementById('statEarnings').textContent = '₹0';
+        document.getElementById('pendingOrdersCount').textContent = '0';
+        document.getElementById('paidOrdersCount').textContent = '0';
         return;
       }
-      const orders = Object.entries(data).sort((a,b)=>(b[1].createdAt||0)-(a[1].createdAt||0));
-      let totalEarnings = 0;
-      let pendingCount = 0;
-      orders.forEach(([id, o])=>{
-        const isPaid = o.status === 'paid';
-        const isAwaiting = o.status === 'awaiting_confirmation';
-        if(isPaid) totalEarnings += (o.price||0);
-        else pendingCount++;
-        const div = document.createElement('div');
-        div.className='order-row-main';
-        if(isAwaiting){ div.style.border = '1.5px solid #ffd23d'; div.style.borderRadius = '14px'; }
-        else if(!isPaid){ div.style.border = '1.5px solid #ff8c1a'; div.style.borderRadius = '14px'; }
-        const date = new Date(o.createdAt).toLocaleString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
-        const statusBadge = isPaid
-          ? `<span style="background:#1c2b1c;color:#7ee787;border:1px solid #2a4a2a;font-size:10px;font-weight:700;padding:3px 9px;border-radius:12px;">✅ PAID</span>`
-          : isAwaiting
-          ? `<span style="background:#2b2a0f;color:#ffe066;border:1px solid #4a481a;font-size:10px;font-weight:700;padding:3px 9px;border-radius:12px;">👀 BUYER SAYS PAID</span>`
-          : `<span style="background:#2b230f;color:#ffb44d;border:1px solid #4a3a1a;font-size:10px;font-weight:700;padding:3px 9px;border-radius:12px;">⏳ PENDING</span>`;
-        const statusText = isPaid ? '✅ Paid' : isAwaiting ? '👀 Buyer says paid (unverified)' : '⏳ Pending';
-        div.innerHTML = `
-          <div class="order-summary-row" onclick="toggleOrderRow('${id}')">
-            <div class="order-summary-info">
-              <div class="order-summary-name">${o.beatName} ${statusBadge}</div>
-              <div class="order-summary-meta">${o.buyerName} · ${date}</div>
-            </div>
-            <div class="order-summary-right">
-              <span class="order-summary-price">₹${o.price}</span>
-              <span class="chevron" id="order-chevron-${id}">⌄</span>
-            </div>
-          </div>
-          <div class="order-detail-panel" id="order-panel-${id}" style="display:none">
-            <div class="detail-row"><span class="detail-label">Order ID</span><span class="detail-value mono">${o.orderId || id}</span></div>
-            <div class="detail-row"><span class="detail-label">Buyer Name</span><span class="detail-value">${o.buyerName}</span></div>
-            ${o.buyerStageName ? `<div class="detail-row"><span class="detail-label">Stage Name</span><span class="detail-value">${o.buyerStageName}</span></div>` : ''}
-            <div class="detail-row"><span class="detail-label">Phone</span><span class="detail-value">${o.buyerPhone||'-'}</span></div>
-            <div class="detail-row"><span class="detail-label">Email</span><span class="detail-value">${o.buyerEmail||'-'}</span></div>
-            ${(o.buyerCity || o.buyerState || o.buyerCountry) ? `<div class="detail-row"><span class="detail-label">Location</span><span class="detail-value">${[o.buyerCity,o.buyerState,o.buyerCountry].filter(Boolean).join(', ')||'-'}</span></div>` : ''}
-            <div class="detail-row"><span class="detail-label">Amount</span><span class="detail-value">₹${o.price}</span></div>
-            ${o.utr ? `<div class="detail-row"><span class="detail-label">UTR / Txn ID</span><span class="detail-value mono" style="color:#7ee787">${o.utr}</span></div>` : ''}
-            ${o.screenshotUrl ? `<div style="margin:10px 0"><div class="detail-label" style="margin-bottom:6px">Payment Screenshot</div><a href="${o.screenshotUrl}" target="_blank"><img src="${o.screenshotUrl}" style="width:100%;max-width:220px;border-radius:10px;border:1px solid var(--border)"></a></div>` : ''}
-            <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value">${statusText}</span></div>
-            <div class="detail-row"><span class="detail-label">Date</span><span class="detail-value">${date}</span></div>
-            ${!isPaid ? `<button onclick="markOrderPaid('${id}')" style="width:100%;margin-top:10px;padding:11px;border-radius:12px;background:linear-gradient(135deg,#ffa63d,#ff8c1a);color:#000;border:none;font-weight:800;font-size:13px;cursor:pointer;">✅ Mark as Paid</button>` : ''}
-            ${o.buyerPhone ? `<a class="whatsapp-buyer-btn" href="https://wa.me/91${o.buyerPhone.replace(/\D/g,'').slice(-10)}" target="_blank">💬 WhatsApp Buyer</a>` : ''}
-            <button onclick="deleteOrder('${id}')" style="width:100%;margin-top:8px;padding:10px;border-radius:12px;background:#2a1414;color:#ff6b6b;border:1px solid #4a2020;font-weight:700;font-size:12.5px;cursor:pointer;">🗑️ Delete Order</button>
-          </div>
-        `;
-        list.appendChild(div);
-      });
+
+      const orders = Object.entries(data).filter(([id,o]) => !o.archived).sort((a,b)=>(b[1].createdAt||0)-(a[1].createdAt||0));
+      const pendingOrders = orders.filter(([id,o]) => o.status !== 'paid');
+      const paidOrders = orders.filter(([id,o]) => o.status === 'paid');
+      const totalEarnings = paidOrders.reduce((sum,[id,o]) => sum + (o.price||0), 0);
+
+      pendingList.innerHTML = pendingOrders.length
+        ? pendingOrders.map(([id,o]) => buildOrderRowHtml(id,o)).join('')
+        : '<div class="msg">No pending orders.</div>';
+
+      paidList.innerHTML = paidOrders.length
+        ? paidOrders.map(([id,o]) => buildOrderRowHtml(id,o)).join('')
+        : '<div class="msg">No paid orders yet.</div>';
+
+      document.getElementById('pendingOrdersCount').textContent = pendingOrders.length;
+      document.getElementById('paidOrdersCount').textContent = paidOrders.length;
       document.getElementById('statOrders').textContent = orders.length;
       const pendingLabel = document.getElementById('statOrdersPending');
-      if(pendingCount){
-        pendingLabel.textContent = `${pendingCount} pending`;
+      if(pendingOrders.length){
+        pendingLabel.textContent = `${pendingOrders.length} pending`;
         pendingLabel.style.display = 'block';
       } else {
         pendingLabel.style.display = 'none';
@@ -789,22 +876,6 @@
     if(order && order.beatId){
       update(ref(db, 'beats/'+order.beatId), { isPrivate: true });
     }
-    // Send order confirmation email to buyer
-    if(order && order.buyerEmail){
-      const orderDate = new Date(order.createdAt || Date.now()).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
-      emailjs.send('service_wevb6lj', 'template_usf040p', {
-        customer_name: order.buyerName || 'Customer',
-        customer_email: order.buyerEmail,
-        beat_name: order.beatName || '',
-        amount: order.price || '',
-        order_id: order.orderId || id,
-        order_date: orderDate
-      }).then(function(response){
-        console.log('Confirmation email sent!', response.status);
-      }).catch(function(error){
-        console.error('Confirmation email failed:', error);
-      });
-    }
   }
 
   window.toggleBeatPrivate = function(id, makePrivate){
@@ -812,8 +883,71 @@
   }
 
   window.deleteOrder = function(id){
-    if(!confirm('Delete this order permanently? This cannot be undone.')) return;
-    remove(ref(db, 'orders/'+id));
+    if(!confirm('Delete this order? It will be archived and can be restored later from Archived Orders.')) return;
+    update(ref(db, 'orders/'+id), { archived: true, archivedAt: Date.now() });
+  }
+
+  window.restoreOrder = function(id){
+    update(ref(db, 'orders/'+id), { archived: false, archivedAt: null });
+  }
+
+  window.permanentlyDeleteOldArchived = function(){
+    const allOrders = window.__allOrders || {};
+    const cutoff = Date.now() - (90 * 24 * 60 * 60 * 1000); // 90 days
+    const toDelete = Object.entries(allOrders).filter(([id,o]) => o.archived && (o.archivedAt||0) < cutoff);
+    if(toDelete.length === 0){
+      alert('No archived orders older than 90 days.');
+      return;
+    }
+    if(!confirm(`Permanently delete ${toDelete.length} archived order(s) older than 90 days? This cannot be undone.`)) return;
+    toDelete.forEach(([id]) => remove(ref(db, 'orders/'+id)));
+    alert(`Deleted ${toDelete.length} order(s).`);
+  }
+
+  function loadArchivedOrders(){
+    const allOrders = window.__allOrders || {};
+    const archived = Object.entries(allOrders).filter(([id,o]) => o.archived).sort((a,b)=>(b[1].archivedAt||0)-(a[1].archivedAt||0));
+    const list = document.getElementById('archivedOrdersList');
+    const countEl = document.getElementById('archivedCount');
+    if(!list) return;
+    countEl.textContent = archived.length;
+    if(archived.length === 0){
+      list.innerHTML = '<div class="msg">No archived orders.</div>';
+      return;
+    }
+    list.innerHTML = archived.map(([id,o])=>{
+      const date = new Date(o.createdAt).toLocaleDateString('en-IN');
+      return `<div class="order-row-main" style="padding:12px;display:flex;justify-content:space-between;align-items:center;gap:10px">
+        <div>
+          <div style="font-weight:700;font-size:13px">${o.beatName} — ₹${o.price}</div>
+          <div style="font-size:11px;color:var(--muted)">${o.buyerName} · ${date}</div>
+        </div>
+        <button onclick="restoreOrder('${id}')" style="padding:8px 14px;border-radius:10px;background:#1c2b1c;color:#7ee787;border:1px solid #2a4a2a;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap">↩️ Restore</button>
+      </div>`;
+    }).join('');
+  }
+
+  window.togglePendingOrders = function(){
+    const panel = document.getElementById('pendingOrdersList');
+    const chevron = document.getElementById('pendingOrdersChevron');
+    const isOpen = panel.style.display === 'block';
+    panel.style.display = isOpen ? 'none' : 'block';
+    chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+  }
+
+  window.togglePaidOrders = function(){
+    const panel = document.getElementById('paidOrdersList');
+    const chevron = document.getElementById('paidOrdersChevron');
+    const isOpen = panel.style.display === 'block';
+    panel.style.display = isOpen ? 'none' : 'block';
+    chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+  }
+
+  window.toggleArchivedSection = function(){
+    const panel = document.getElementById('archivedOrdersPanel');
+    const isOpen = panel.style.display === 'block';
+    panel.style.display = isOpen ? 'none' : 'block';
+    if(!isOpen) loadArchivedOrders();
   }
 </script>
 </body>
