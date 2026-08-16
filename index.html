@@ -757,8 +757,11 @@
           <div class="order-row"><span>Beat</span><span id="payBeatName" class="order-value"></span></div>
           <div class="order-row"><span>Order ID</span><span id="payOrderId" class="order-value mono"></span></div>
         </div>
-        <button class="pay-btn" id="ivePaidBtn" style="width:100%;margin-top:16px;opacity:0.4;cursor:not-allowed" onclick="markIPaid()" disabled>✅ I've Paid</button>
-        <div id="ivePaidHint" style="font-size:11px;color:var(--muted);text-align:center;margin-top:6px">Tap "Pay with GPay/PhonePe" or "Show UPI ID" first</div>
+        <button class="pay-btn" id="ivePaidBtn" style="width:100%;margin-top:16px;padding:16px;font-size:16px;opacity:0.4;cursor:not-allowed" onclick="markIPaid()" disabled>✅ I've Paid</button>
+        <div id="ivePaidHint" style="font-size:11px;color:var(--muted);text-align:center;margin-top:6px">Tap "Pay with GPay/PhonePe" and complete the payment</div>
+        <div id="verifyingCountdown" style="display:none;text-align:center;margin-top:6px">
+          <div style="font-size:12.5px;color:#ffb44d;font-weight:600">⏳ Please wait, verifying... <span id="countdownNum">15</span>s</div>
+        </div>
         <div class="modal-actions">
           <button class="cancel-btn" style="flex:1" onclick="closeModal()">Close</button>
         </div>
@@ -804,6 +807,8 @@
 
   let currentBeat = null;
   let pageWasHidden = false;
+  let countdownTimer = null;
+  let countdownDelayTimer = null;
   const container = document.getElementById('beatsList');
 
   const beatsRef = ref(db, 'beats');
@@ -1139,35 +1144,61 @@
 
   function resetIvePaidButton(){
     pageWasHidden = false;
+    if(countdownTimer) clearInterval(countdownTimer);
+    if(countdownDelayTimer) clearTimeout(countdownDelayTimer);
     const btn = document.getElementById('ivePaidBtn');
     const hint = document.getElementById('ivePaidHint');
+    const countdownBox = document.getElementById('verifyingCountdown');
     if(btn){
       btn.disabled = true;
       btn.style.opacity = '0.4';
       btn.style.cursor = 'not-allowed';
     }
     if(hint) hint.style.display = 'block';
+    if(countdownBox) countdownBox.style.display = 'none';
   }
 
   function enableIvePaid(){
     const btn = document.getElementById('ivePaidBtn');
-    const hint = document.getElementById('ivePaidHint');
     if(btn && btn.disabled){
       btn.disabled = false;
       btn.style.opacity = '1';
       btn.style.cursor = 'pointer';
     }
-    if(hint) hint.style.display = 'none';
   }
 
-  // Enable "I've Paid" ONLY when the buyer actually leaves the page (goes to UPI app)
-  // and comes back — not just from clicking a button while staying on the page.
+  function startVerifyingCountdown(){
+    const hint = document.getElementById('ivePaidHint');
+    const countdownBox = document.getElementById('verifyingCountdown');
+    const countdownNum = document.getElementById('countdownNum');
+    if(hint) hint.style.display = 'none';
+    if(countdownBox) countdownBox.style.display = 'block';
+    let secondsLeft = 15;
+    if(countdownNum) countdownNum.textContent = secondsLeft;
+    if(countdownTimer) clearInterval(countdownTimer);
+    if(countdownDelayTimer) clearTimeout(countdownDelayTimer);
+    // Stay static for 5 seconds first (feels like it's actually checking), then start ticking down
+    countdownDelayTimer = setTimeout(function(){
+      countdownTimer = setInterval(function(){
+        secondsLeft--;
+        if(countdownNum) countdownNum.textContent = secondsLeft;
+        if(secondsLeft <= 0){
+          clearInterval(countdownTimer);
+          if(countdownBox) countdownBox.style.display = 'none';
+          enableIvePaid();
+        }
+      }, 1000);
+    }, 5000);
+  }
+
+  // Start the verifying countdown ONLY when the buyer actually leaves the page (goes to
+  // UPI app) and comes back — not just from clicking a button while staying on the page.
   document.addEventListener('visibilitychange', function(){
     const payStepVisible = document.getElementById('payStep') && document.getElementById('payStep').style.display === 'block';
     if(document.visibilityState === 'hidden' && payStepVisible){
       pageWasHidden = true;
-    } else if(document.visibilityState === 'visible' && payStepVisible && pageWasHidden){
-      enableIvePaid();
+    } else if(document.visibilityState === 'visible' && payStepVisible && pageWasHidden && !countdownTimer){
+      startVerifyingCountdown();
     }
   });
 
