@@ -770,7 +770,7 @@
       </div>
       <div class="success-box" id="confirmedSubStep" style="display:none">
         <div class="tick">✅</div>
-        <h3>Payment Received!</h3>
+        <h3>Thank You! Verifying Payment...</h3>
         <div class="order-summary">
           <div class="order-row"><span>Beat</span><span id="confirmBeatName" class="order-value"></span></div>
           <div class="order-row"><span>Order ID</span><span id="confirmOrderId" class="order-value mono"></span></div>
@@ -792,7 +792,27 @@
         </div>
         <a href="https://wa.me/919137471587" target="_blank" class="whatsapp-support-btn" id="waConfirmBtn">📤 Upload/Send Payment Screenshot on WhatsApp</a>
         <div class="modal-actions">
-          <button class="pay-btn" style="flex:1" onclick="closeModal()">Done</button>
+          <button class="pay-btn" style="flex:1" onclick="showThankYouStep()">Done</button>
+        </div>
+      </div>
+      <div class="success-box" id="thankYouSubStep" style="display:none">
+        <div class="tick">🙏</div>
+        <h3>Thank You for Your Order!</h3>
+        <div style="font-size:13px;color:#e8b88a;margin-top:6px;margin-bottom:14px">Thank you for trusting Shri Beatz with your music 🎵</div>
+        <div class="order-summary">
+          <div class="order-row"><span>Beat</span><span id="thankYouBeatName" class="order-value"></span></div>
+          <div class="order-row"><span>Order ID</span><span id="thankYouOrderId" class="order-value mono"></span></div>
+        </div>
+        <div class="next-steps">
+          <div class="next-steps-title">What happens next</div>
+          <div class="next-step-item">🔍 We'll verify your payment against our records</div>
+          <div class="next-step-item">📩 After payment verification, you'll receive your files' link via email</div>
+          <div class="next-step-item">📄 License certificate included with your files</div>
+          <div class="next-step-item">🔒 This beat is now reserved for you</div>
+        </div>
+        <a href="https://wa.me/919137471587" target="_blank" class="whatsapp-support-btn">💬 Message us if you need help</a>
+        <div class="modal-actions">
+          <button class="pay-btn" style="flex:1" onclick="closeModal()">Close</button>
         </div>
       </div>
     </div>
@@ -1135,6 +1155,7 @@
     document.getElementById('payStep').style.display='none';
     document.getElementById('qrSubStep').style.display='block';
     document.getElementById('confirmedSubStep').style.display='none';
+    document.getElementById('thankYouSubStep').style.display='none';
     document.getElementById('upiIdBox').style.display='none';
     document.getElementById('upiIdToggle').textContent='Show UPI ID instead';
     document.getElementById('buyOverlay').classList.add('active');
@@ -1154,6 +1175,7 @@
     document.getElementById('payStep').style.display='none';
     document.getElementById('qrSubStep').style.display='block';
     document.getElementById('confirmedSubStep').style.display='none';
+    document.getElementById('thankYouSubStep').style.display='none';
     resetIvePaidButton();
   }
 
@@ -1421,6 +1443,13 @@
     }).catch(()=>{});
 
     showPayScreen(orderId);
+  }
+
+  window.showThankYouStep = function(){
+    document.getElementById('thankYouBeatName').textContent = currentBeat.name;
+    document.getElementById('thankYouOrderId').textContent = currentOrderId;
+    document.getElementById('confirmedSubStep').style.display='none';
+    document.getElementById('thankYouSubStep').style.display='block';
   }
 
   window.markIPaid = function(){
