@@ -809,6 +809,7 @@
 
   let currentBeat = null;
   let pageWasHidden = false;
+  let hiddenAtTimestamp = 0;
   let countdownTimer = null;
   let countdownDelayTimer = null;
   let troubleFallbackTimer = null;
@@ -1148,6 +1149,7 @@
 
   function resetIvePaidButton(){
     pageWasHidden = false;
+    hiddenAtTimestamp = 0;
     if(countdownTimer) clearInterval(countdownTimer);
     if(countdownDelayTimer) clearTimeout(countdownDelayTimer);
     if(troubleFallbackTimer) clearTimeout(troubleFallbackTimer);
@@ -1207,14 +1209,21 @@
     }, 5000);
   }
 
-  // Start the verifying countdown ONLY when the buyer actually leaves the page (goes to
-  // UPI app) and comes back — not just from clicking a button while staying on the page.
+  // Start the verifying countdown ONLY when the buyer actually leaves the page for a
+  // meaningful amount of time (not just an instant back-press on the app chooser).
+  const MIN_AWAY_MS = 5000; // must be away at least 5 seconds to count as genuine
+
   document.addEventListener('visibilitychange', function(){
     const payStepVisible = document.getElementById('payStep') && document.getElementById('payStep').style.display === 'block';
     if(document.visibilityState === 'hidden' && payStepVisible){
       pageWasHidden = true;
+      hiddenAtTimestamp = Date.now();
     } else if(document.visibilityState === 'visible' && payStepVisible && pageWasHidden && !countdownTimer){
-      startVerifyingCountdown();
+      if(Date.now() - hiddenAtTimestamp >= MIN_AWAY_MS){
+        startVerifyingCountdown();
+      } else {
+        pageWasHidden = false; // too quick — treat as not genuine, wait for next attempt
+      }
     }
   });
 
@@ -1222,11 +1231,20 @@
   // window blur/focus catches app-switching in more cases.
   window.addEventListener('blur', function(){
     const payStepVisible = document.getElementById('payStep') && document.getElementById('payStep').style.display === 'block';
-    if(payStepVisible) pageWasHidden = true;
+    if(payStepVisible){
+      pageWasHidden = true;
+      hiddenAtTimestamp = Date.now();
+    }
   });
   window.addEventListener('focus', function(){
     const payStepVisible = document.getElementById('payStep') && document.getElementById('payStep').style.display === 'block';
-    if(payStepVisible && pageWasHidden && !countdownTimer) startVerifyingCountdown();
+    if(payStepVisible && pageWasHidden && !countdownTimer){
+      if(Date.now() - hiddenAtTimestamp >= MIN_AWAY_MS){
+        startVerifyingCountdown();
+      } else {
+        pageWasHidden = false;
+      }
+    }
   });
 
   // Ultimate fallback: if nothing triggered after 45s of the pay screen being open,
