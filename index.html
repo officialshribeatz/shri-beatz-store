@@ -769,54 +769,41 @@
         </div>
       </div>
       <div class="success-box" id="confirmedSubStep" style="display:none">
-        <div class="tick">✅</div>
-        <h3>Thank You! Verifying Payment...</h3>
-        <div class="order-summary">
+        <div class="tick" style="font-size:32px;margin-bottom:4px">✅</div>
+        <h3 style="font-size:16px">Thank You! Verifying Payment...</h3>
+        <div class="order-summary" style="margin-top:8px">
           <div class="order-row"><span>Beat</span><span id="confirmBeatName" class="order-value"></span></div>
           <div class="order-row"><span>Order ID</span><span id="confirmOrderId" class="order-value mono"></span></div>
         </div>
-        <div style="background:#2b230f;border:1px solid #4a3a1a;border-radius:12px;padding:12px 14px;margin-top:14px;text-align:left">
-          <div style="font-size:12.5px;color:#ffb44d;font-weight:800;margin-bottom:4px">⚠️ Payment screenshot required</div>
-          <div style="font-size:12px;color:#e8c896;line-height:1.5">Please upload your payment screenshot below — this is required for us to verify your payment and deliver your beat.</div>
+        <div style="background:#2b230f;border:1px solid #4a3a1a;border-radius:12px;padding:10px 12px;margin-top:10px;text-align:left">
+          <div style="font-size:11.5px;color:#ffb44d;font-weight:800;margin-bottom:3px">⚠️ Screenshot required for verification &amp; delivery</div>
         </div>
-        <div class="next-steps">
-          <div class="next-steps-title">What happens next</div>
-          <div class="next-step-item">📤 Upload your payment screenshot below</div>
-          <div class="next-step-item">🔍 We verify it against our records</div>
-          <div class="next-step-item">📩 Once confirmed, WAV + Trackout stems are sent to your WhatsApp/Email within 24 hours</div>
-        </div>
-        <div class="field" style="margin-top:14px;text-align:left">
-          <label>UPI Transaction ID / UTR (optional)</label>
+        <div class="field" style="margin-top:10px;text-align:left">
+          <label style="font-size:11px">UPI Transaction ID / UTR (optional)</label>
           <input type="text" id="utrInput" placeholder="e.g. 402715xxxxxx" oninput="saveUtrToOrder()">
-          <div style="font-size:10.5px;color:var(--muted);margin-top:4px">💡 Found in your payment app under "Transaction History" — look for "UTR" or "Txn ID". Skip if you can't find it.</div>
         </div>
-        <div style="background:#1c2b1c;border:1px solid #2a4a2a;border-radius:12px;padding:12px 14px;margin-top:14px;text-align:left">
-          <div style="font-size:12.5px;color:#7ee787;font-weight:800;margin-bottom:4px">📤 Send Screenshot on WhatsApp</div>
-          <div style="font-size:12px;color:#c8e8c8;line-height:1.5">Tap below and send your payment screenshot on WhatsApp — we'll verify and deliver your beat within 24 hours.</div>
-        </div>
-        <a href="https://wa.me/919137471587" target="_blank" class="whatsapp-support-btn" id="waConfirmBtn" style="display:block;margin-top:12px">💬 Send Screenshot on WhatsApp</a>
-        <div class="modal-actions">
+        <a href="https://wa.me/919137471587" target="_blank" class="whatsapp-support-btn" id="waConfirmBtn">📤 Send Screenshot on WhatsApp</a>
+        <div class="modal-actions" style="margin-top:12px">
           <button class="pay-btn" style="flex:1" onclick="showThankYouStep()">Done</button>
         </div>
       </div>
       <div class="success-box" id="thankYouSubStep" style="display:none">
-        <div class="tick">✅</div>
-        <h3>Order Confirmed!</h3>
-        <div style="font-size:13px;color:#e8b88a;margin-top:6px;margin-bottom:14px">Thank you for trusting Shri Beatz with your music 🎵</div>
-        <div class="order-summary">
+        <div class="tick" style="font-size:32px;margin-bottom:4px">✅</div>
+        <h3 style="font-size:16px">Order Confirmed!</h3>
+        <div style="font-size:12px;color:#e8b88a;margin-top:4px;margin-bottom:8px">Thank you for trusting Shri Beatz with your music 🎵</div>
+        <div class="order-summary" style="margin-top:6px">
           <div class="order-row"><span>Beat</span><span id="thankYouBeatName" class="order-value"></span></div>
           <div class="order-row"><span>Order ID</span><span id="thankYouOrderId" class="order-value mono"></span></div>
         </div>
-        <div class="next-steps">
+        <div class="next-steps" style="margin-top:10px">
           <div class="next-steps-title">What happens next</div>
-          <div class="next-step-item">🔍 We'll verify your payment against our records</div>
-          <div class="next-step-item">📩 After payment verification, you'll receive your files' link via email</div>
-          <div class="next-step-item">📄 License certificate included with your files</div>
+          <div class="next-step-item">🔍 We'll verify your payment</div>
+          <div class="next-step-item">📩 Files' link sent via email after verification</div>
           <div class="next-step-item">🔒 This beat is now reserved for you</div>
         </div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Any questions about your order? We're here to help.</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px;margin-top:10px">Any questions about your order? We're here to help.</div>
         <a href="https://wa.me/919137471587" target="_blank" class="whatsapp-support-btn" id="thankYouWaBtn">💬 Have a Query? Chat with Us on WhatsApp</a>
-        <div class="modal-actions">
+        <div class="modal-actions" style="margin-top:10px">
           <button class="pay-btn" style="flex:1" onclick="closeModal()">Close</button>
         </div>
       </div>
@@ -827,7 +814,6 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getDatabase, ref, onValue, push, set, update, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-  import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAZOYSy3s3HwkjhnwQzWPMzabky9LrjX8c",
@@ -841,7 +827,6 @@
 
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
-  const storage = getStorage(app);
 
   let currentBeat = null;
   let pageWasHidden = false;
@@ -1492,7 +1477,6 @@
       update(ref(db, 'orders/'+currentOrderId), { utr: utr });
     }, 800);
   }
-
 </script>
 </body>
 </html>
