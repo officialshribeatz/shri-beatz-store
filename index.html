@@ -757,7 +757,8 @@
           <div class="order-row"><span>Beat</span><span id="payBeatName" class="order-value"></span></div>
           <div class="order-row"><span>Order ID</span><span id="payOrderId" class="order-value mono"></span></div>
         </div>
-        <button class="pay-btn" style="width:100%;margin-top:16px" onclick="markIPaid()">✅ I've Paid</button>
+        <button class="pay-btn" id="ivePaidBtn" style="width:100%;margin-top:16px;opacity:0.4;cursor:not-allowed" onclick="markIPaid()" disabled>✅ I've Paid</button>
+        <div id="ivePaidHint" style="font-size:11px;color:var(--muted);text-align:center;margin-top:6px">Tap "Pay with GPay/PhonePe" or "Show UPI ID" first</div>
         <div class="modal-actions">
           <button class="cancel-btn" style="flex:1" onclick="closeModal()">Close</button>
         </div>
@@ -802,6 +803,7 @@
   const db = getDatabase(app);
 
   let currentBeat = null;
+  let pageWasHidden = false;
   const container = document.getElementById('beatsList');
 
   const beatsRef = ref(db, 'beats');
@@ -1117,6 +1119,7 @@
     document.getElementById('upiIdBox').style.display='none';
     document.getElementById('upiIdToggle').textContent='Show UPI ID instead';
     document.getElementById('buyOverlay').classList.add('active');
+    resetIvePaidButton();
   }
   window.closeModal = function(){
     document.getElementById('buyOverlay').classList.remove('active');
@@ -1131,7 +1134,42 @@
     document.getElementById('payStep').style.display='none';
     document.getElementById('qrSubStep').style.display='block';
     document.getElementById('confirmedSubStep').style.display='none';
+    resetIvePaidButton();
   }
+
+  function resetIvePaidButton(){
+    pageWasHidden = false;
+    const btn = document.getElementById('ivePaidBtn');
+    const hint = document.getElementById('ivePaidHint');
+    if(btn){
+      btn.disabled = true;
+      btn.style.opacity = '0.4';
+      btn.style.cursor = 'not-allowed';
+    }
+    if(hint) hint.style.display = 'block';
+  }
+
+  function enableIvePaid(){
+    const btn = document.getElementById('ivePaidBtn');
+    const hint = document.getElementById('ivePaidHint');
+    if(btn && btn.disabled){
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.style.cursor = 'pointer';
+    }
+    if(hint) hint.style.display = 'none';
+  }
+
+  // Enable "I've Paid" ONLY when the buyer actually leaves the page (goes to UPI app)
+  // and comes back — not just from clicking a button while staying on the page.
+  document.addEventListener('visibilitychange', function(){
+    const payStepVisible = document.getElementById('payStep') && document.getElementById('payStep').style.display === 'block';
+    if(document.visibilityState === 'hidden' && payStepVisible){
+      pageWasHidden = true;
+    } else if(document.visibilityState === 'visible' && payStepVisible && pageWasHidden){
+      enableIvePaid();
+    }
+  });
 
   window.toggleUpiId = function(){
     const box = document.getElementById('upiIdBox');
@@ -1231,6 +1269,8 @@
   }
 
   window.markIPaid = function(){
+    const btn = document.getElementById('ivePaidBtn');
+    if(btn && btn.disabled) return;
     if(currentOrderId){
       update(ref(db, 'orders/'+currentOrderId), { status: 'awaiting_confirmation', markedPaidAt: Date.now() });
       document.getElementById('confirmBeatName').textContent = currentBeat.name;
