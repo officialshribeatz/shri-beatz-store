@@ -759,6 +759,7 @@
         </div>
         <button class="pay-btn" id="ivePaidBtn" style="width:100%;margin-top:16px;padding:16px;font-size:16px;opacity:0.4;cursor:not-allowed" onclick="markIPaid()" disabled>✅ I've Paid</button>
         <div id="ivePaidHint" style="font-size:11px;color:var(--muted);text-align:center;margin-top:6px">Tap "Pay with GPay/PhonePe" and complete the payment</div>
+        <div id="troubleFallbackLink" onclick="startVerifyingCountdown()" style="display:none;font-size:11.5px;color:#ff9d4d;text-align:center;margin-top:8px;cursor:pointer;text-decoration:underline">Already paid but button not active? Tap here</div>
         <div id="verifyingCountdown" style="display:none;text-align:center;margin-top:6px">
           <div style="font-size:12.5px;color:#ffb44d;font-weight:600">⏳ Please wait, verifying... <span id="countdownNum">15</span>s</div>
         </div>
@@ -809,6 +810,7 @@
   let pageWasHidden = false;
   let countdownTimer = null;
   let countdownDelayTimer = null;
+  let troubleFallbackTimer = null;
   const container = document.getElementById('beatsList');
 
   const beatsRef = ref(db, 'beats');
@@ -1146,9 +1148,11 @@
     pageWasHidden = false;
     if(countdownTimer) clearInterval(countdownTimer);
     if(countdownDelayTimer) clearTimeout(countdownDelayTimer);
+    if(troubleFallbackTimer) clearTimeout(troubleFallbackTimer);
     const btn = document.getElementById('ivePaidBtn');
     const hint = document.getElementById('ivePaidHint');
     const countdownBox = document.getElementById('verifyingCountdown');
+    const fallback = document.getElementById('troubleFallbackLink');
     if(btn){
       btn.disabled = true;
       btn.style.opacity = '0.4';
@@ -1156,6 +1160,7 @@
     }
     if(hint) hint.style.display = 'block';
     if(countdownBox) countdownBox.style.display = 'none';
+    if(fallback) fallback.style.display = 'none';
   }
 
   function enableIvePaid(){
@@ -1202,6 +1207,31 @@
     }
   });
 
+  // Fallback: some browsers/screenshot actions don't fire visibilitychange reliably.
+  // window blur/focus catches app-switching in more cases.
+  window.addEventListener('blur', function(){
+    const payStepVisible = document.getElementById('payStep') && document.getElementById('payStep').style.display === 'block';
+    if(payStepVisible) pageWasHidden = true;
+  });
+  window.addEventListener('focus', function(){
+    const payStepVisible = document.getElementById('payStep') && document.getElementById('payStep').style.display === 'block';
+    if(payStepVisible && pageWasHidden && !countdownTimer) startVerifyingCountdown();
+  });
+
+  // Ultimate fallback: if nothing triggered after 45s of the pay screen being open,
+  // show a manual "having trouble" link so a genuine buyer never gets stuck.
+  function scheduleTroubleFallback(){
+    if(troubleFallbackTimer) clearTimeout(troubleFallbackTimer);
+    troubleFallbackTimer = setTimeout(function(){
+      const payStepVisible = document.getElementById('payStep') && document.getElementById('payStep').style.display === 'block';
+      const btn = document.getElementById('ivePaidBtn');
+      if(payStepVisible && btn && btn.disabled && !countdownTimer){
+        const fallback = document.getElementById('troubleFallbackLink');
+        if(fallback) fallback.style.display = 'block';
+      }
+    }, 45000);
+  }
+
   window.toggleUpiId = function(){
     const box = document.getElementById('upiIdBox');
     const toggle = document.getElementById('upiIdToggle');
@@ -1236,6 +1266,7 @@
 
     const waMsg = encodeURIComponent(`Hi, I paid ₹${currentBeat.price} for "${currentBeat.name}" (Order: ${orderId}). Sharing my payment screenshot.`);
     document.getElementById('waConfirmBtn').href = `https://wa.me/919137471587?text=${waMsg}`;
+    scheduleTroubleFallback();
   }
 
   window.proceedToPay = function(){
