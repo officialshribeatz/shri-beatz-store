@@ -1355,9 +1355,22 @@
       return;
     }
 
-    // Check for an existing pending order for the same email + beat within the last 5 minutes
-    const allOrders = window.__allOrdersCache || {};
+    // Check for an existing pending order for the same email + beat within the last 5 minutes.
+    // Check local cache FIRST (instant, no network round-trip delay), then Firebase cache as backup.
     const now = Date.now();
+    const localMatch = Object.values(window.__localOrdersCache || {}).find(o =>
+      o.beatId === currentBeat.id &&
+      o.buyerEmail === email &&
+      o.status === 'pending' &&
+      (now - (o.createdAt||0)) < DUPLICATE_WINDOW_MS
+    );
+    if(localMatch){
+      currentOrderId = localMatch.orderId;
+      showPayScreen(localMatch.orderId);
+      return;
+    }
+
+    const allOrders = window.__allOrdersCache || {};
     const existing = Object.values(allOrders).find(o =>
       o.beatId === currentBeat.id &&
       o.buyerEmail === email &&
@@ -1375,9 +1388,7 @@
     const orderId = 'SB-' + Date.now().toString(36).toUpperCase().slice(-6);
     currentOrderId = orderId;
 
-    // Create the order in Firebase as "pending" — status updated manually later from admin panel
-    const orderRef = ref(db, 'orders/' + orderId);
-    set(orderRef, {
+    const orderData = {
       orderId: orderId,
       beatId: currentBeat.id,
       beatName: currentBeat.name,
@@ -1391,7 +1402,16 @@
       buyerCity: city,
       status: "pending",
       createdAt: Date.now()
-    });
+    };
+
+    // Save to local cache immediately so a rapid duplicate click is caught
+    // even before Firebase's real-time listener round-trips back to us.
+    window.__localOrdersCache = window.__localOrdersCache || {};
+    window.__localOrdersCache[orderId] = orderData;
+
+    // Create the order in Firebase as "pending" — status updated manually later from admin panel
+    const orderRef = ref(db, 'orders/' + orderId);
+    set(orderRef, orderData);
 
     // Notify admin instantly so payment can be watched for
     fetch('https://ntfy.sh/shribeatz-orders-sk2001', {
@@ -1408,6 +1428,9 @@
     if(btn && btn.disabled) return;
     if(currentOrderId){
       update(ref(db, 'orders/'+currentOrderId), { status: 'awaiting_confirmation', markedPaidAt: Date.now() });
+      if(window.__localOrdersCache && window.__localOrdersCache[currentOrderId]){
+        window.__localOrdersCache[currentOrderId].status = 'awaiting_confirmation';
+      }
       document.getElementById('confirmBeatName').textContent = currentBeat.name;
       document.getElementById('confirmOrderId').textContent = currentOrderId;
       document.getElementById('utrInput').value = '';
