@@ -396,6 +396,9 @@
   .beat-card.dimmed .beat-footer{display:none;}
   .beat-card.dimmed .mini-footer{
     display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    gap:2px;
     position:absolute;
     right:10px;
     top:50%;
@@ -1079,7 +1082,7 @@
                 ${beat.key ? `<div class="beat-detail-row"><span class="label">Key</span><span class="value">${beat.key}</span></div>` : ''}
               </div>
               <div class="mini-footer">
-                ${beat.discount ? `<span style="font-size:10.5px;color:#7ee787;font-weight:800;margin-right:6px">${beat.discount}% OFF</span>` : ''}
+                ${beat.discount ? `<span style="font-size:10px;color:#7ee787;font-weight:800">${beat.discount}% OFF</span>` : ''}
                 <button class="cart-buy-btn" onclick='openModal("${id}", ${JSON.stringify(beat.name)}, ${finalPrice})'>
                   Buy Now ₹${finalPrice}
                 </button>
