@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shri Beatz - Cover Image Resizer</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    background: #0d0d0d;
+    color: #fff;
+    padding: 16px;
+  }
+  h1 {
+    font-size: 20px;
+    color: #ff9d2f;
+    margin: 0 0 4px;
+  }
+  p.sub {
+    color: #aaa;
+    font-size: 13px;
+    margin: 0 0 20px;
+  }
+  .card {
+    background: #1a1a1a;
+    border: 1px solid #2c2c2c;
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  input[type="file"] {
+    width: 100%;
+    padding: 10px;
+    background: #111;
+    border: 1px dashed #444;
+    border-radius: 10px;
+    color: #ccc;
+    font-size: 14px;
+  }
+  .canvas-wrap {
+    margin-top: 16px;
+    display: none;
+    text-align: center;
+  }
+  canvas {
+    max-width: 100%;
+    border-radius: 10px;
+    border: 1px solid #333;
+    background: repeating-conic-gradient(#222 0% 25%, #1a1a1a 0% 50%) 50% / 20px 20px;
+  }
+  .filename-box {
+    margin-top: 12px;
+    font-size: 13px;
+    color: #8fd18f;
+    word-break: break-all;
+    background: #111;
+    padding: 8px 10px;
+    border-radius: 8px;
+  }
+  .btn {
+    display: block;
+    width: 100%;
+    text-align: center;
+    padding: 14px;
+    margin-top: 14px;
+    border-radius: 10px;
+    border: none;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+  }
+  .btn-primary {
+    background: #ff9d2f;
+    color: #111;
+  }
+  .btn-primary:disabled {
+    background: #555;
+    color: #999;
+  }
+  .size-options {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+  .size-options button {
+    flex: 1;
+    min-width: 80px;
+    padding: 10px 6px;
+    background: #111;
+    border: 1px solid #333;
+    border-radius: 8px;
+    color: #ccc;
+    font-size: 13px;
+  }
+  .size-options button.active {
+    border-color: #ff9d2f;
+    color: #ff9d2f;
+    background: #2a1c0a;
+  }
+  label.small {
+    font-size: 12px;
+    color: #999;
+    display: block;
+    margin: 12px 0 4px;
+  }
+</style>
+</head>
+<body>
+
+<h1>SHRI BEATZ — Cover Resizer</h1>
+<p class="sub">Select photo → auto square crop (center) → download with the same original filename.</p>
+
+<div class="card">
+  <input type="file" id="fileInput" accept="image/*">
+
+  <label class="small">Output size</label>
+  <div class="size-options" id="sizeOptions">
+    <button data-size="800" class="active">800×800</button>
+    <button data-size="1000">1000×1000</button>
+    <button data-size="1200">1200×1200</button>
+  </div>
+
+  <div class="canvas-wrap" id="canvasWrap">
+    <canvas id="canvas"></canvas>
+    <div class="filename-box" id="filenameBox"></div>
+    <button class="btn btn-primary" id="downloadBtn" disabled>⬇ Download Square Image</button>
+  </div>
+</div>
+
+<script>
+const fileInput = document.getElementById('fileInput');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const canvasWrap = document.getElementById('canvasWrap');
+const filenameBox = document.getElementById('filenameBox');
+const downloadBtn = document.getElementById('downloadBtn');
+const sizeButtons = document.querySelectorAll('#sizeOptions button');
+
+let currentImage = null;
+let originalFileName = '';
+let outputSize = 800;
+
+sizeButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    sizeButtons.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    outputSize = parseInt(btn.dataset.size, 10);
+    if (currentImage) drawSquareCrop();
+  });
+});
+
+fileInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  // Preserve the EXACT original filename, fully, no truncation
+  originalFileName = file.name;
+
+  const reader = new FileReader();
+  reader.onload = (evt) => {
+    const img = new Image();
+    img.onload = () => {
+      currentImage = img;
+      drawSquareCrop();
+      canvasWrap.style.display = 'block';
+      downloadBtn.disabled = false;
+      filenameBox.textContent = 'Will save as: ' + originalFileName;
+    };
+    img.src = evt.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+function drawSquareCrop() {
+  canvas.width = outputSize;
+  canvas.height = outputSize;
+
+  const img = currentImage;
+  const srcW = img.width;
+  const srcH = img.height;
+  const side = Math.min(srcW, srcH);
+
+  // Center-crop coordinates (like Instagram square crop)
+  const sx = (srcW - side) / 2;
+  const sy = (srcH - side) / 2;
+
+  ctx.clearRect(0, 0, outputSize, outputSize);
+  ctx.drawImage(img, sx, sy, side, side, 0, 0, outputSize, outputSize);
+}
+
+downloadBtn.addEventListener('click', () => {
+  // Figure out mime type from original extension so quality/format matches
+  const lowerName = originalFileName.toLowerCase();
+  let mime = 'image/jpeg';
+  if (lowerName.endsWith('.png')) mime = 'image/png';
+  else if (lowerName.endsWith('.webp')) mime = 'image/webp';
+
+  canvas.toBlob((blob) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    // FULL original filename preserved exactly, no changes
+    a.download = originalFileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, mime, 0.92);
+});
+</script>
+
+</body>
+</html>
