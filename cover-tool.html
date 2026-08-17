@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shri Beatz - Cover Image Tool</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    background: #0a0a0a;
+    color: #f2f2f2;
+    padding: 16px;
+  }
+  h1 { font-size: 19px; color: #ff8c1a; margin: 0 0 4px; }
+  p.sub { color: #9a9a9a; font-size: 12.5px; margin: 0 0 18px; line-height:1.5; }
+  .card {
+    background: #161616;
+    border: 1px solid #2a2a2a;
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+  input[type="file"] {
+    width: 100%;
+    padding: 12px;
+    background: #0f0f0f;
+    border: 1.5px dashed #3a3a3a;
+    border-radius: 12px;
+    color: #ccc;
+    font-size: 13.5px;
+  }
+  .canvas-wrap { margin-top: 16px; display: none; text-align: center; }
+  canvas {
+    max-width: 100%;
+    border-radius: 12px;
+    border: 1px solid #2a2a2a;
+    background: repeating-conic-gradient(#222 0% 25%, #1a1a1a 0% 50%) 50% / 20px 20px;
+  }
+  .info-box {
+    margin-top: 12px;
+    font-size: 12.5px;
+    color: #7ee787;
+    background: #0f0f0f;
+    padding: 9px 11px;
+    border-radius: 9px;
+    word-break: break-all;
+    text-align: left;
+  }
+  .info-box .warn { color: #ffb44d; display:block; margin-top:4px; }
+  .btn {
+    display: block;
+    width: 100%;
+    text-align: center;
+    padding: 14px;
+    margin-top: 12px;
+    border-radius: 12px;
+    border: none;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+  }
+  .btn-primary { background: linear-gradient(135deg,#ffa63d,#ff8c1a); color: #000; }
+  .btn-primary:disabled { background: #444; color: #888; }
+  label.small { font-size: 11.5px; color: #9a9a9a; display: block; margin: 4px 0 4px; text-transform:uppercase; letter-spacing:0.4px; }
+  .badge {
+    display:inline-block;
+    font-size:10.5px;
+    font-weight:700;
+    color:#000;
+    background:#7ee787;
+    padding:3px 9px;
+    border-radius:20px;
+    margin-bottom:10px;
+  }
+</style>
+</head>
+<body>
+
+<h1>🎨 SHRI BEATZ — Cover Image Tool</h1>
+<p class="sub">Kuthlihi photo (YouTube, WhatsApp, gallery — kaहीही) select kar. Ha tool automatically <b>square (600×600)</b> crop karel ani clean standard JPEG madhe save karel — जुनी corrupt-format problem yenar nahi.</p>
+
+<div class="card">
+  <span class="badge">FIXED SIZE: 600 × 600 (site cha standard)</span>
+  <input type="file" id="fileInput" accept="image/*">
+
+  <div class="canvas-wrap" id="canvasWrap">
+    <canvas id="canvas"></canvas>
+    <div class="info-box" id="infoBox"></div>
+    <button class="btn btn-primary" id="downloadBtn" disabled>⬇ Download Clean Cover</button>
+  </div>
+</div>
+
+<script>
+const fileInput = document.getElementById('fileInput');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const canvasWrap = document.getElementById('canvasWrap');
+const infoBox = document.getElementById('infoBox');
+const downloadBtn = document.getElementById('downloadBtn');
+
+const OUTPUT_SIZE = 600; // matches existing covers (Achanak etc are ~600x600)
+
+let originalFileName = '';
+
+function cleanExt(name){
+  // strip existing extension, we always re-save as .jpeg for consistency
+  const dot = name.lastIndexOf('.');
+  return dot > -1 ? name.slice(0, dot) : name;
+}
+
+fileInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const baseName = cleanExt(file.name);
+  originalFileName = baseName + '.jpeg'; // force consistent, safe extension
+
+  const reader = new FileReader();
+  reader.onload = (evt) => {
+    const img = new Image();
+    img.onload = () => {
+      drawSquareCrop(img);
+      canvasWrap.style.display = 'block';
+      downloadBtn.disabled = false;
+
+      let warn = '';
+      if (/\s|\(|\)|#|&|%/.test(file.name)) {
+        warn = `<span class="warn">⚠️ Original naav madhe space/special characters hote — ते काढून टाकलेत.</span>`;
+      }
+      infoBox.innerHTML = `Save hoईल: <b>${originalFileName}</b> (600×600, clean JPEG)${warn}`;
+    };
+    img.onerror = () => {
+      alert('Ha file image म्हणून उघडता आला नाही. दुसरी file try कर.');
+    };
+    img.src = evt.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+function drawSquareCrop(img){
+  canvas.width = OUTPUT_SIZE;
+  canvas.height = OUTPUT_SIZE;
+
+  const srcW = img.naturalWidth;
+  const srcH = img.naturalHeight;
+  const side = Math.min(srcW, srcH);
+  const sx = (srcW - side) / 2;
+  const sy = (srcH - side) / 2;
+
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, OUTPUT_SIZE, OUTPUT_SIZE);
+  ctx.drawImage(img, sx, sy, side, side, 0, 0, OUTPUT_SIZE, OUTPUT_SIZE);
+}
+
+downloadBtn.addEventListener('click', () => {
+  // Re-encoding via canvas.toBlob always produces a clean, standard JPEG —
+  // this is what fixes corrupt/incompatible source files (e.g. YouTube downloads).
+  canvas.toBlob((blob) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = originalFileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 'image/jpeg', 0.92);
+});
+</script>
+
+</body>
+</html>
