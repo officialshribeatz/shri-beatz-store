@@ -314,6 +314,10 @@
         <label>Cover Image Filename (upload image to /covers/ folder on GitHub first, then type exact filename here)</label>
         <input type="text" id="beatCover" placeholder="e.g. mycover.jpg">
       </div>
+      <div class="field" style="display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" id="beatWavOnly" style="width:auto;">
+        <label style="margin:0;text-transform:none;font-size:13px;">Only WAV file available (No Stems) — show badge on this beat</label>
+      </div>
       <button onclick="addBeat()">Add Beat</button>
       <div class="msg" id="addMsg"></div>
     </div>
@@ -402,6 +406,7 @@
     const discount = discountVal ? parseInt(discountVal) : null;
     const file = document.getElementById('beatFile').value.trim();
     const cover = document.getElementById('beatCover').value.trim();
+    const wavOnly = document.getElementById('beatWavOnly').checked;
     if(!name || !price || !file){
       document.getElementById('addMsg').textContent = 'Please fill Name, Price and File Name.';
       return;
@@ -415,6 +420,7 @@
     };
     if(bpm) beatData.bpm = bpm;
     if(discount) beatData.discount = discount;
+    if(wavOnly) beatData.wavOnly = true;
     set(beatRef, beatData).then(()=>{
       document.getElementById('addMsg').textContent = '✅ Beat added!';
       document.getElementById('beatName').value='';
@@ -425,6 +431,7 @@
       document.getElementById('beatDiscount').value='';
       document.getElementById('beatFile').value='';
       document.getElementById('beatCover').value='';
+      document.getElementById('beatWavOnly').checked = false;
     });
   }
 
@@ -472,6 +479,10 @@
           <div>
             <label>Discount (%)</label>
             <input type="number" id="discount-${id}" value="${beat.discount||''}" min="0" max="100" placeholder="none">
+          </div>
+          <div class="full" style="display:flex;align-items:center;gap:8px;margin-top:2px;">
+            <input type="checkbox" id="wavonly-${id}" ${beat.wavOnly ? 'checked' : ''} style="width:auto;">
+            <label style="margin:0;text-transform:none;font-size:12px;">Only WAV (No Stems) — show badge</label>
           </div>
         </div>
         <div class="beat-row-actions">
@@ -568,6 +579,7 @@
     if(priceVal && parseInt(priceVal) > 0) updates.price = parseInt(priceVal);
     // Discount: a number saves it, an empty field clears any existing discount
     updates.discount = discountVal ? parseInt(discountVal) : null;
+    updates.wavOnly = document.getElementById('wavonly-'+id).checked ? true : null;
     if(Object.keys(updates).length === 0){
       alert('Nothing to update.');
       return;
