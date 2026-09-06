@@ -1056,7 +1056,7 @@
             ${isOriginalLink ? `<div class="highlight-banner">👉 This is the beat you're looking for</div>` : `<div></div>`}
             <div class="exclusive-badge">Exclusive</div>
           </div>
-          ${beat.wavOnly && isHighlighted ? `<div style="background:linear-gradient(135deg,#3a1414,#2a0f0f);border:1px solid #5a2020;color:#ff9d6b;font-size:13px;font-weight:800;text-align:center;padding:9px 12px;border-radius:12px;margin-bottom:12px;letter-spacing:0.2px;">⚠️ Only WAV File Available — No Stems Included</div>` : ''}
+          ${beat.wavOnly && isHighlighted ? `<div style="background:rgba(255,140,26,0.08);border:1px solid rgba(255,140,26,0.3);color:#ffb44d;font-size:12.5px;font-weight:700;text-align:center;padding:9px 12px;border-radius:12px;margin-bottom:12px;letter-spacing:0.2px;">🎵 Only WAV File is Available — No Stems</div>` : ''}
           <div class="beat-head">
             <button class="play-btn list-play-btn" aria-label="Play">
               <svg class="icon-play" viewBox="0 0 24 24" fill="#000"><path d="M8 5v14l11-7z"/></svg>
@@ -1076,7 +1076,7 @@
                 Prod. by Shri Beatz
                 <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#3ea6ff"/><path d="M8 12.5l2.5 2.5L16 9.5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </div>
-              ${beat.wavOnly ? `<div style="display:inline-flex;width:fit-content;background:#2a1414;color:#ff9d6b;border:1px solid #4a2020;font-size:9.5px;font-weight:700;padding:2px 8px;border-radius:10px;margin-bottom:5px;">⚠️ WAV Only – No Stems</div>` : ''}
+              ${beat.wavOnly ? `<div style="display:inline-flex;width:fit-content;background:rgba(255,140,26,0.08);color:#ffb44d;border:1px solid rgba(255,140,26,0.3);font-size:9.5px;font-weight:700;padding:2px 8px;border-radius:10px;margin-bottom:5px;">🎵 Only WAV File Available</div>` : ''}
               ${beat.genre ? `<div class="dimmed-genre">${beat.genre}</div>` : ''}
               <div class="beat-tags">
                 <span class="beat-tag play-count">🎧 ${beat.plays||0}</span>
