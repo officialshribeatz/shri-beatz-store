@@ -1075,9 +1075,9 @@
                 Prod. by Shri Beatz
                 <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#3ea6ff"/><path d="M8 12.5l2.5 2.5L16 9.5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </div>
+              ${beat.wavOnly ? `<div style="display:inline-flex;width:fit-content;background:#2a1414;color:#ff9d6b;border:1px solid #4a2020;font-size:9.5px;font-weight:700;padding:2px 8px;border-radius:10px;margin-bottom:5px;">⚠️ WAV Only – No Stems</div>` : ''}
               ${beat.genre ? `<div class="dimmed-genre">${beat.genre}</div>` : ''}
               <div class="beat-tags">
-                ${beat.wavOnly ? `<span class="beat-tag" style="background:#2a1414;color:#ff9d6b;border-color:#4a2020;">⚠️ WAV Only – No Stems</span>` : ''}
                 <span class="beat-tag play-count">🎧 ${beat.plays||0}</span>
                 ${beat.genre ? `<span class="beat-tag">${beat.genre}</span>` : ''}
                 ${beat.key ? `<span class="beat-tag">${beat.key}</span>` : ''}
