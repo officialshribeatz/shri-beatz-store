@@ -1056,6 +1056,7 @@
             ${isOriginalLink ? `<div class="highlight-banner">👉 This is the beat you're looking for</div>` : `<div></div>`}
             <div class="exclusive-badge">Exclusive</div>
           </div>
+          ${beat.wavOnly && isHighlighted ? `<div style="background:linear-gradient(135deg,#3a1414,#2a0f0f);border:1px solid #5a2020;color:#ff9d6b;font-size:13px;font-weight:800;text-align:center;padding:9px 12px;border-radius:12px;margin-bottom:12px;letter-spacing:0.2px;">⚠️ Only WAV File Available — No Stems Included</div>` : ''}
           <div class="beat-head">
             <button class="play-btn list-play-btn" aria-label="Play">
               <svg class="icon-play" viewBox="0 0 24 24" fill="#000"><path d="M8 5v14l11-7z"/></svg>
