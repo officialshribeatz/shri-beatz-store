@@ -1063,6 +1063,7 @@
               <svg class="icon-pause" viewBox="0 0 24 24" fill="#000" style="display:none"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
             </button>
             <div class="cover-wrap">
+              ${beat.wavOnly && !isHighlighted ? `<div style="position:absolute;top:6px;left:6px;z-index:3;background:rgba(20,14,8,0.85);color:#ffb44d;border:1px solid rgba(255,140,26,0.4);font-size:8.5px;font-weight:700;padding:2px 7px;border-radius:8px;white-space:nowrap;">🎵 WAV Only</div>` : ''}
               ${beat.cover ? `<img class="beat-cover${isHighlighted ? ' large' : ''}" src="covers/${beat.cover}" onerror="this.outerHTML='<div class=&quot;beat-cover-placeholder${isHighlighted ? ' large' : ''}&quot;>🎵</div>'">` : `<div class="beat-cover-placeholder${isHighlighted ? ' large' : ''}">🎵</div>`}
               <button class="play-btn" aria-label="Play">
                 <svg class="icon-play" viewBox="0 0 24 24" fill="#000"><path d="M8 5v14l11-7z"/></svg>
@@ -1076,7 +1077,6 @@
                 Prod. by Shri Beatz
                 <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#3ea6ff"/><path d="M8 12.5l2.5 2.5L16 9.5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </div>
-              ${beat.wavOnly ? `<div style="display:inline-flex;width:fit-content;background:rgba(255,140,26,0.08);color:#ffb44d;border:1px solid rgba(255,140,26,0.3);font-size:9.5px;font-weight:700;padding:2px 8px;border-radius:10px;margin-bottom:5px;">🎵 Only WAV File Available</div>` : ''}
               ${beat.genre ? `<div class="dimmed-genre">${beat.genre}</div>` : ''}
               <div class="beat-tags">
                 <span class="beat-tag play-count">🎧 ${beat.plays||0}</span>
