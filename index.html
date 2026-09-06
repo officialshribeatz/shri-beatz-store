@@ -1077,6 +1077,7 @@
               </div>
               ${beat.genre ? `<div class="dimmed-genre">${beat.genre}</div>` : ''}
               <div class="beat-tags">
+                ${beat.wavOnly ? `<span class="beat-tag" style="background:#2a1414;color:#ff9d6b;border-color:#4a2020;">⚠️ WAV Only – No Stems</span>` : ''}
                 <span class="beat-tag play-count">🎧 ${beat.plays||0}</span>
                 ${beat.genre ? `<span class="beat-tag">${beat.genre}</span>` : ''}
                 ${beat.key ? `<span class="beat-tag">${beat.key}</span>` : ''}
