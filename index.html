@@ -1196,6 +1196,9 @@
                 counted = true;
                 const plaRef = ref(db, 'beats/'+id+'/plays');
                 runTransaction(plaRef, (val)=> (val||0)+1);
+                // NEW: record when this beat was last actually played (10s+ listen),
+                // so the admin panel can show a "recently played" badge per beat.
+                update(ref(db, 'beats/'+id), { lastPlayedAt: Date.now() });
               }
             }, 10000);
           }
