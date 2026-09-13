@@ -23,6 +23,18 @@
   .card ul{padding-left:20px;margin-top:6px;}
   .card ul li{margin-bottom:6px;}
   .note{font-size:12px;color:var(--muted);text-align:center;margin-top:24px;line-height:1.6;}
+  .wav-only-banner{
+    background:rgba(255,140,26,0.08);
+    border:1px solid rgba(255,140,26,0.3);
+    color:#ffb44d;
+    font-size:13px;
+    font-weight:700;
+    text-align:center;
+    padding:12px 14px;
+    border-radius:12px;
+    margin-bottom:20px;
+    letter-spacing:0.2px;
+  }
 </style>
 </head>
 <body>
@@ -36,11 +48,15 @@
   <h2>Exclusive License Terms</h2>
   <div class="sub">What you get when you purchase a beat</div>
 
+  <div id="wavOnlyBanner" class="wav-only-banner" style="display:none">
+    🎵 This beat is sold as <b>WAV file only</b> — individual trackout/stems are NOT included.
+  </div>
+
   <div class="card">
     <h3>✅ What's Included</h3>
     <ul>
       <li>Full high-quality WAV file of the beat</li>
-      <li>Individual trackout / stems (drums, melody, bass, etc.)</li>
+      <li id="stemsLine">Individual trackout / stems (drums, melody, bass, etc.)</li>
       <li>100% exclusive rights — the beat is taken off the store and never sold to anyone else again</li>
       <li>Full rights to use the beat in your song, release it commercially, and monetize it (streaming, YouTube, etc.)</li>
     </ul>
@@ -54,7 +70,7 @@
 
   <div class="card">
     <h3>📦 Delivery</h3>
-    <p>After successful payment, your files (WAV + Trackout) will be sent to your WhatsApp or Email within 24 hours. You will receive a download link (Google Drive / WeTransfer).</p>
+    <p id="deliveryLine">After successful payment, your files (WAV + Trackout) will be sent to your WhatsApp or Email within 24 hours. You will receive a download link (Google Drive / WeTransfer).</p>
   </div>
 
   <div class="card">
@@ -73,5 +89,17 @@
     © Shri Beatz. All rights reserved.
   </div>
 </div>
+
+<script>
+  // If the buy modal linked here with ?wavOnly=1, swap the content so it accurately
+  // reflects that this specific beat does NOT include stems.
+  const params = new URLSearchParams(window.location.search);
+  if(params.get('wavOnly') === '1'){
+    document.getElementById('wavOnlyBanner').style.display = 'block';
+    document.getElementById('stemsLine').remove();
+    document.getElementById('deliveryLine').textContent =
+      "After successful payment, your WAV file will be sent to your WhatsApp or Email within 24 hours. You will receive a download link (Google Drive / WeTransfer).";
+  }
+</script>
 </body>
 </html>
