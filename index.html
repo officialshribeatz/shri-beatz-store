@@ -875,7 +875,7 @@
         <button class="cancel-btn" onclick="closeModal()">Cancel</button>
         <button class="pay-btn" onclick="proceedToPay()">Pay ₹<span id="modalPrice"></span></button>
       </div>
-      <div class="modal-legal">✅ 100% Exclusive • <a href="license.html" target="_blank">What you get →</a></div>
+      <div class="modal-legal">✅ 100% Exclusive • <a href="license.html" id="licenseLink" target="_blank">What you get →</a></div>
     </div>
     <div id="payStep" style="display:none">
       <div class="success-box" id="qrSubStep">
@@ -1098,7 +1098,7 @@
               </div>
               <div class="mini-footer">
                 ${beat.discount ? `<span style="font-size:10px;color:#7ee787;font-weight:800">${beat.discount}% OFF</span>` : ''}
-                <button class="cart-buy-btn" onclick='openModal("${id}", ${JSON.stringify(beat.name)}, ${finalPrice})'>
+                <button class="cart-buy-btn" onclick='openModal("${id}", ${JSON.stringify(beat.name)}, ${finalPrice}, ${beat.wavOnly ? 'true' : 'false'})'>
                   Buy Now ₹${finalPrice}
                 </button>
               </div>
@@ -1126,7 +1126,7 @@
               <div class="price">${beat.discount ? `<span style="text-decoration:line-through;opacity:0.5;font-size:14px;font-weight:600;margin-right:6px">₹${beat.price}</span>₹${finalPrice} <span style="background:linear-gradient(135deg,#3dd68c,#1eae66);color:#000;font-size:10px;font-weight:800;padding:2px 8px;border-radius:10px;vertical-align:middle">${beat.discount}% OFF</span>` : `₹${beat.price}`}</div>
               <div class="urgency-line">🔥 Sold once, gone forever</div>
             </div>
-            <button class="buy-btn" onclick='openModal("${id}", ${JSON.stringify(beat.name)}, ${finalPrice})'>Buy Now</button>
+            <button class="buy-btn" onclick='openModal("${id}", ${JSON.stringify(beat.name)}, ${finalPrice}, ${beat.wavOnly ? 'true' : 'false'})'>Buy Now</button>
           </div>
         `;
         const audioEl = card.querySelector('audio');
@@ -1292,8 +1292,8 @@
   }
   document.getElementById('searchInput').addEventListener('input', applySearchFilter);
 
-  window.openModal = function(id, name, price){
-    currentBeat = {id, name, price};
+  window.openModal = function(id, name, price, wavOnly){
+    currentBeat = {id, name, price, wavOnly};
     document.getElementById('modalBeatName').textContent = name;
     document.getElementById('modalPrice').textContent = price;
     document.getElementById('formStep').style.display='block';
@@ -1304,6 +1304,14 @@
     document.getElementById('upiIdBox').style.display='none';
     document.getElementById('upiIdToggle').textContent='Show UPI ID instead';
     document.getElementById('buyOverlay').classList.add('active');
+
+    // Update "What you get →" link based on this specific beat's stems availability,
+    // so the license page shown matches what the buyer is actually purchasing.
+    const licenseLink = document.getElementById('licenseLink');
+    if(licenseLink){
+      licenseLink.href = wavOnly ? 'license.html?wavOnly=1' : 'license.html';
+    }
+
     resetIvePaidButton();
   }
   window.closeModal = function(){
